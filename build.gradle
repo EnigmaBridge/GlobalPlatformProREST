@@ -10,12 +10,11 @@ targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
 }
 
 allprojects {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 }
 

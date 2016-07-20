@@ -5,7 +5,9 @@ apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'idea'
 apply plugin: 'spring-boot'
-apply plugin: 'org.akhikhl.gretty'
+
+// Gretty is disabled for now: https://www.mkyong.com/spring-mvc/gradle-spring-4-mvc-hello-world-example-annotation/
+//apply plugin: 'org.akhikhl.gretty'
 
 // JDK 7
 sourceCompatibility = 1.7
@@ -14,7 +16,6 @@ targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
 }
 
 jar {
@@ -28,10 +29,10 @@ dependencies {
     compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-web'
 
-    compile 'javax.servlet:jstl:1.2'
+    //compile 'javax.servlet:jstl:1.2'
 
     // Include in compile only, exclude in the war
-    providedCompile 'javax.servlet:servlet-api:2.5'
+    //providedCompile 'javax.servlet:servlet-api:2.5'
 
     // Testing
     testCompile group: 'junit', name: 'junit', version: '4.11'
@@ -44,11 +45,10 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
-        classpath 'org.akhikhl.gretty:gretty:+'
+        //classpath 'org.akhikhl.gretty:gretty:+'
         classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.3.6.RELEASE'
     }
 }
@@ -56,11 +56,11 @@ buildscript {
 // Don't use Jetty8, even it's a servlet 3.0+ container,
 // but not support non-jar WebApplicationInitializer scanning.
 // It will cause "No Spring WebApplicationInitializer types detected on classpath"
-gretty {
-    port = 8080
-    contextPath = 'spring4'
-    servletContainer = 'jetty9' //tomcat7 or tomcat8
-}
+//gretty {
+//    port = 8080
+//    contextPath = 'spring4'
+//    servletContainer = 'jetty9' //tomcat7 or tomcat8
+//}
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.3'
