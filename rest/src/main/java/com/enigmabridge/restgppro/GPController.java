@@ -31,7 +31,7 @@ public class GPController {
 
     @RequestMapping("/raw")
     public void rawRequest(@RequestParam(value = "request") String request, OutputStream output) throws IOException, NoSuchAlgorithmException {
-        final PrintStream ps = new PrintStream(output);
+        final PrintStream ps = new PrintStream(output, true);
         final GPTool tool = new GPTool(ps, ps);
         final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
