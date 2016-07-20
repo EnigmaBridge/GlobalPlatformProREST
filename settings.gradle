@@ -1,3 +1,4 @@
 rootProject.name = 'restgppro'
+include 'gppro'
 include 'rest'
 
