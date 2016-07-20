@@ -16,9 +16,6 @@ targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
-    flatDir {
-        dirs 'libs'
-    }
 }
 
 jar {
@@ -32,17 +29,7 @@ dependencies {
     compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-web'
 
-    // GPPro
-    compile group: 'net.sf.jopt-simple', name: 'jopt-simple', version: '4.9'
-    compile group: 'com.google.guava', name: 'guava', version: '19.0'
-    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.54'
-
-    // Local GPPro
-    compile name: 'apdu4j-pcsc'
-    compile name: 'simonasmartcardio'
-
-    // Include in compile only, exclude in the war
-    //providedCompile 'javax.servlet:servlet-api:2.5'
+    compile project(':gppro')
 
     // Testing
     testCompile group: 'junit', name: 'junit', version: '4.11'
