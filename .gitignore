@@ -2,3 +2,7 @@
 *.iml
 .gradle
 gradle/
+out/
+build/
+rest/out
+rest/build
