@@ -1,2 +1,3 @@
 Guides:
 https://spring.io/guides/gs/rest-service/
+https://github.com/mkyong/spring4-mvc-gradle-annotation-hello-world
