@@ -22,7 +22,12 @@ repositories {
 }
 
 jar {
-    baseName = 'gs-rest-service'
+    baseName = 'gppro-rest'
+    version =  '0.1.0'
+}
+
+war {
+    baseName = 'gppro-rest'
     version =  '0.1.0'
 }
 
@@ -32,12 +37,15 @@ dependencies {
     compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-web'
 
+    // GPPro dependency
     compile project(':gppro')
 
     // Testing
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.springframework.boot:spring-boot-starter-test'
     testCompile 'com.jayway.jsonpath:json-path'
+
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 }
 
 // Gretty Embedded Jetty
