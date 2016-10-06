@@ -8,3 +8,5 @@ rest/build
 dist
 classes
 *.jks
+*.yml
+logback.xml
