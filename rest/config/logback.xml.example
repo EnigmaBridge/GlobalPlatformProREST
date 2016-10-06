@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+        <file>./gpprorest/trace.log</file>
+        <append>true</append>
+        <encoder>
+            <Pattern>.%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %n</Pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.springframework" level="info" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+
+    <logger name="com.enigmabridge" level="debug" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+
+    <logger name="org.hibernate" level="info" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+    <logger name="org.hibernate.SQL" level="info" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+    <logger name="org.hibernate.jdbc" level="info" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+    <logger name="org.hibernate.type" level="info" additivity="false">
+        <appender-ref ref="file" />
+    </logger>
+
+    <root>
+        <level value="INFO" />
+        <appender-ref ref="file" />
+    </root>
+</configuration>

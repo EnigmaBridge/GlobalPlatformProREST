@@ -3,9 +3,9 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 
-// JDK 7
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+// JDK 8
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenLocal()

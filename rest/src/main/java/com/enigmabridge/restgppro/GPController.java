@@ -1,5 +1,6 @@
 package com.enigmabridge.restgppro;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,21 +14,24 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.enigmabridge.restgppro.ApiConfig.API_PATH;
+
 /**
  * Created by dusanklinec on 20.07.16.
  */
 @RestController
+@PreAuthorize("hasAuthority('" + ApiConfig.BUSINESS_ROLE + "')")
 public class GPController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
-    @RequestMapping("/greeting")
+    @RequestMapping(API_PATH+"/greeting")
     public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
-    @RequestMapping("/raw")
+    @RequestMapping(API_PATH+"/raw")
     public void rawRequest(@RequestParam(value = "request") String request, OutputStream output) throws IOException, NoSuchAlgorithmException {
         final PrintStream ps = new PrintStream(output, true);
         final GPTool tool = new GPTool(ps, ps);

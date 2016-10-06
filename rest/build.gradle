@@ -10,8 +10,8 @@ apply plugin: 'spring-boot'
 //apply plugin: 'org.akhikhl.gretty'
 
 // JDK 7
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
@@ -37,6 +37,7 @@ dependencies {
     compile 'org.slf4j:jcl-over-slf4j:1.7.5'
     compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-security'
 
     // GPPro dependency
     compile project(':gppro')
@@ -74,4 +75,17 @@ buildscript {
 task wrapper(type: Wrapper) {
     gradleVersion = '2.3'
 }
+
+task generateKeyStore(type: Exec) {
+    workingDir "$projectDir"
+    commandLine '../createKeystore.sh'
+}
+
+task copyBuilt(type: Copy) {
+    dependsOn build
+    from jar.archivePath
+    into "../dist"
+}
+
+tasks.bootRun.dependsOn([generateKeyStore,copyBuilt]);
 

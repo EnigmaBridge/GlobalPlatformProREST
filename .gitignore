@@ -5,3 +5,6 @@ out/
 build/
 rest/out
 rest/build
+dist
+classes
+*.jks
