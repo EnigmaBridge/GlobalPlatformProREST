@@ -56,6 +56,6 @@ To build war:
 ### Example
 
 ```
-http://127.0.0.1:8081/raw/?request=--debug%20--list
+http://127.0.0.1:8081/api/v1/raw/?request=--debug%20--list
 ```
 
