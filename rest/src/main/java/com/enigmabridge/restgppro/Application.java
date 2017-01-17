@@ -50,6 +50,11 @@ public class Application implements CommandLineRunner {
     private ErrorAttributes errorAttributes;
 
     public static void main(String[] args) {
+
+        // first, let's initialize the server instance by reading configuration data from
+        // the disk
+
+
         SpringApplication.run(Application.class, args);
     }
 

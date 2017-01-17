@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Enigma Bridge Ltd.
+ * Copyright (c) 2017 Enigma Bridge Ltd.
  *
  * This file is part of the GlobalPlatformProREST project.
  *
@@ -22,43 +22,43 @@
 
 package com.enigmabridge.restgppro;
 
+import com.enigmabridge.restgppro.response.GeneralResponse;
+import com.enigmabridge.restgppro.rest.JsonEnvelope;
+import org.json.JSONObject;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import pro.javacard.gp.GPArgumentTokenizer;
-import pro.javacard.gp.GPTool;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.enigmabridge.restgppro.ApiConfig.API_PATH;
 
 /**
  * Created by dusanklinec on 20.07.16.
  */
 @RestController
-@PreAuthorize("hasAuthority('" + ApiConfig.MANAGEMENT_ROLE + "')")
-public class GPController {
+@PreAuthorize("hasAuthority('" + ApiConfig.BUSINESS_ROLE + "')")
+public class MPCController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
+    private static final String MPC_PATH = ApiConfig.API_PATH+"/mpc";
 
-    @RequestMapping(API_PATH+"/greeting")
+    @RequestMapping(MPC_PATH+"/greeting")
     public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
-    @RequestMapping(API_PATH+"/raw")
-    public void rawRequest(@RequestParam(value = "request") String request, OutputStream output) throws IOException, NoSuchAlgorithmException {
-        final PrintStream ps = new PrintStream(output, true);
-        final GPTool tool = new GPTool(ps, ps);
-        final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
-        final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
-        ps.println("Done: " + code);
+    @RequestMapping(value = MPC_PATH + "/setup", method = RequestMethod.POST)
+    public GeneralResponse apiUpdated(@RequestBody String jsonStr, HttpServletRequest request) {
+        long timeStart = System.currentTimeMillis();
+        JsonEnvelope message = null;
+        String remoteIPAddress = request.getRemoteAddr();
+        GeneralResponse msgBack = null;
+
+        JSONObject parsedContent = new JSONObject(jsonStr);
+
+
+
+
+        return msgBack;
     }
 }
