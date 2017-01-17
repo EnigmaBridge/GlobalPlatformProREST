@@ -37,12 +37,17 @@ import org.springframework.boot.autoconfigure.web.ErrorAttributes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import pro.javacard.gp.GPArgumentTokenizer;
+import pro.javacard.gp.GPTool;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -100,12 +105,70 @@ public class Application implements CommandLineRunner {
     }
 
     private static boolean ScanSimonas() {
-        return false;
+        boolean ok = true;
+        //"simonasmartcardio.jar:smarthsmfast.simona.Simonaio:bin%40tcp%3A%2F%2F"+ipaddress
+
+        String commandLine = "--bs 246 -d -terminals ";
+        if (GlobalConfiguration.getSimonaIO() != null) {
+            commandLine += GlobalConfiguration.getSimonaIO();
+        }
+        // the cli is ready - we will now have to just add ipaddress
+        for (String oneIP : GlobalConfiguration.getSimonaIPs()) {
+            String request = commandLine + oneIP;
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream errout = new ByteArrayOutputStream();
+
+            final PrintStream psout = new PrintStream(stdout);
+            final PrintStream pserr = new PrintStream(errout);
+            final GPTool tool = new GPTool(psout, pserr);
+            final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+            try {
+                final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+            } catch (Exception e) {
+                ok = false;
+            }
+
+        }
+
+        return ok;
     }
 
     private static boolean ScanReaders() {
+        boolean ok = true;
+        //"simonasmartcardio.jar:smarthsmfast.simona.Simonaio:bin%40tcp%3A%2F%2F"+ipaddress
 
-        return false;
+        String commandLine = "--bs 246 -d";
+        if (GlobalConfiguration.getReaderIO() != null) {
+            commandLine += GlobalConfiguration.getReaderIO();
+        }
+        // the cli is ready - we will now have to just add ipaddress
+        String request = commandLine;
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream errout = new ByteArrayOutputStream();
+
+        final PrintStream psout = new PrintStream(stdout);
+        final PrintStream pserr = new PrintStream(errout);
+        final GPTool tool = new GPTool(psout, pserr);
+        final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+        try {
+            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+
+            // lets' now parse the output
+            String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+            for (String line: outputLines){
+                line = line.trim();
+                if (line.startsWith("[ ]")){
+                    GlobalConfiguration.addEmptyReader(line.substring(4));
+                } else if (line.startsWith("[*]")){
+                    GlobalConfiguration.addReader(line.substring(4));
+                }
+            }
+        } catch (Exception e) {
+            ok = false;
+        }
+
+
+        return ok;
     }
 
     private static boolean ReadGlobalConfiguration(File globalFile) {
@@ -120,7 +183,10 @@ public class Application implements CommandLineRunner {
                 File protFolder = new File(protocolFolder);
                 if (!protFolder.exists()) {
                     LOG.warn("Creating protocol folder", protFolder.getCanonicalPath());
-                    protFolder.mkdirs();
+                    if (!protFolder.mkdirs()) {
+                        LOG.error("Creating protocol folder failed");
+                        ok = false;
+                    }
                 }
                 if (protFolder.exists() && protFolder.isDirectory()) {
                     GlobalConfiguration.setProtocolFolder(protFolder.getCanonicalPath());
@@ -133,7 +199,10 @@ public class Application implements CommandLineRunner {
                     File instFolder = new File(instanceFolder);
                     if (!instFolder.exists()) {
                         LOG.warn("Creating instance folder", instFolder.getCanonicalPath());
-                        instFolder.mkdirs();
+                        if (!instFolder.mkdirs()) {
+                            LOG.error("Creating instance folder failed");
+                            ok = false;
+                        }
                     }
 
                     if (instFolder.exists() && instFolder.isDirectory()) {
@@ -175,7 +244,8 @@ public class Application implements CommandLineRunner {
 
                     // test if the file exists
                     if (ok && (sSmartCardIO != null)) {
-                        File fSmartCardIO = new File(sSmartCardIO);
+                        String[] pathAndRest = sSmartCardIO.split(":");
+                        File fSmartCardIO = new File(pathAndRest[0]);
                         if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
                             LOG.error("Global configuration file - smartcardio for readers doesn't exist", fSmartCardIO.getCanonicalPath());
                             ok = false;
@@ -219,7 +289,8 @@ public class Application implements CommandLineRunner {
                     }
                     // test if the file exists
                     if (ok && (sSmartCardIO != null)) {
-                        File fSmartCardIO = new File(sSmartCardIO);
+                        String[] pathAndRest = sSmartCardIO.split(":");
+                        File fSmartCardIO = new File(pathAndRest[0]);
                         if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
                             LOG.error("Global configuration file - smartcardio for simonas doesn't exist", fSmartCardIO.getCanonicalPath());
                             ok = false;

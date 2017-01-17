@@ -37,6 +37,9 @@ public class GlobalConfiguration {
     private static boolean simonaUse;
     private static String simonaIO;
     private static LinkedList<String> simonaSet;
+    private static LinkedList<String> emptyReaders = new LinkedList<>();
+    private static LinkedList<String> readers = new LinkedList<>();
+    private static LinkedList<String> simonaReaders = new LinkedList<>();
 
     public static void setProtocolFolder(String path) {
         GlobalConfiguration.protocolFolder = path;
@@ -54,6 +57,10 @@ public class GlobalConfiguration {
         GlobalConfiguration.readerIO = readerIO;
     }
 
+    public static String getReaderIO() {
+        return GlobalConfiguration.readerIO;
+    }
+
     public static void setReaderSet(LinkedList<String> readerSet) {
         GlobalConfiguration.readerSet = readerSet;
     }
@@ -66,7 +73,27 @@ public class GlobalConfiguration {
         GlobalConfiguration.simonaIO = simonaIO;
     }
 
+    public static String getSimonaIO() {
+        return GlobalConfiguration.simonaIO;
+    }
+
     public static void setSimonaSet(LinkedList<String> simonaSet) {
         GlobalConfiguration.simonaSet = simonaSet;
+    }
+
+    public static LinkedList<String> getSimonaIPs() {
+        return simonaSet;
+    }
+
+    public static void addEmptyReader(String emptyReader) {
+        emptyReaders.add(emptyReader);
+    }
+
+    public static void addReader(String reader) {
+        readers.add(reader);
+    }
+
+    public static void addSimonaReader(String reader) {
+        simonaReaders.add(reader);
     }
 }
