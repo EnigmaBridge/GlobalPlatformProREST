@@ -42,8 +42,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -126,8 +126,9 @@ public class Application implements CommandLineRunner {
                     GlobalConfiguration.setReaderIO(sSmartCardIO);
                     LinkedList<String> listOfReaders = new LinkedList<>();
                     if (aList != null) {
-                        List<Object> rawReaders = aList.toList();
-                        for (Object oneReader : rawReaders) {
+                        Iterator<Object> rawReaders = aList.iterator();
+                        while (rawReaders.hasNext()) {
+                            Object oneReader = rawReaders.next();
                             if (oneReader instanceof String) {
                                 listOfReaders.add((String) oneReader);
                             } else {
@@ -149,8 +150,9 @@ public class Application implements CommandLineRunner {
                     GlobalConfiguration.setSimonaIO(sSmartCardIO);
                     LinkedList<String> listOfReaders = new LinkedList<>();
                     if (aList != null) {
-                        List<Object> rawReaders = aList.toList();
-                        for (Object oneReader : rawReaders) {
+                        Iterator<Object> rawReaders = aList.iterator();
+                        while (rawReaders.hasNext()) {
+                            Object oneReader = rawReaders.next();
                             if (oneReader instanceof String) {
                                 listOfReaders.add((String) oneReader);
                             } else {
