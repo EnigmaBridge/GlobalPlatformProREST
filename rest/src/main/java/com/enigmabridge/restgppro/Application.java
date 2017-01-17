@@ -99,6 +99,10 @@ public class Application implements CommandLineRunner {
                 JSONObject json = new JSONObject(jsonString);
                 String protocolFolder = json.getString("protocolfolder");
                 File protFolder = new File(protocolFolder);
+                if (!protFolder.exists()){
+                    LOG.warn("Creating protocol folder", protFolder.getCanonicalPath());
+                    protFolder.mkdirs();
+                }
                 if (protFolder.exists() && protFolder.isDirectory()){
                     GlobalConfiguration.setProtocolFolder(protFolder.getCanonicalPath());
                 } else {
@@ -108,6 +112,11 @@ public class Application implements CommandLineRunner {
                 if (ok){
                     String instanceFolder = json.getString("instancefolder");
                     File instFolder = new File(instanceFolder);
+                    if (!instFolder.exists()){
+                        LOG.warn("Creating instance folder", instFolder.getCanonicalPath());
+                        instFolder.mkdirs();
+                    }
+
                     if (instFolder.exists() && instFolder.isDirectory()){
                         GlobalConfiguration.setInstanceFolder(instFolder.getCanonicalPath());
                     } else {
@@ -120,8 +129,16 @@ public class Application implements CommandLineRunner {
                 if (ok){
                     JSONObject readers = json.getJSONObject("readers");
                     boolean bScan = readers.getBoolean("use");
-                    JSONArray aList = readers.getJSONArray("list");
-                    String sSmartCardIO = readers.getString("smartcardio");
+                    JSONArray aList;
+                    if (readers.isNull("list")){
+                        aList = null;
+                    } else {
+                        aList = readers.getJSONArray("list");
+                    }
+                    String sSmartCardIO = null;
+                    if (!readers.isNull("smartcardio")) {
+                        sSmartCardIO = readers.getString("smartcardio");
+                    }
                     GlobalConfiguration.setReaderUse(bScan);
                     GlobalConfiguration.setReaderIO(sSmartCardIO);
                     LinkedList<String> listOfReaders = new LinkedList<>();
@@ -143,8 +160,15 @@ public class Application implements CommandLineRunner {
                 if (ok){
                     JSONObject simonas = json.getJSONObject("simonas");
                     boolean bScan = simonas.getBoolean("scan");
-                    JSONArray aList = simonas.getJSONArray("list");
-                    String sSmartCardIO = simonas.getString("smartcardio");
+                    JSONArray aList = null;
+                    if (!simonas.isNull("addresses")){
+                        aList = simonas.getJSONArray("addresses");
+                    }
+
+                    String sSmartCardIO = null;
+                    if (!simonas.isNull("smartcardio")){
+                        sSmartCardIO = simonas.getString("smartcardio");
+                    }
 
                     GlobalConfiguration.setSimonaUse(bScan);
                     GlobalConfiguration.setSimonaIO(sSmartCardIO);
