@@ -29,4 +29,7 @@ public class Consts {
     public static final int SW_STAT_PROCESSING_ERROR = 0x001;
     public static final int SW_STAT_OK = 0x000;
     public static final int SW_STAT_INPUT_PARSE_FAIL = 0x002;
+    public static final int SW_STAT_SYSTEM_ERROR = 0x003;
+    public static final int SW_STAT_INVALID_GLOBAL_CONFIG = 0x004;
+
 }

@@ -22,7 +22,11 @@
 
 package com.enigmabridge.restgppro;
 
+import com.enigmabridge.restgppro.utils.Consts;
+import com.enigmabridge.restgppro.utils.GlobalConfiguration;
 import com.enigmabridge.restgppro.utils.NamedThreadFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +38,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import static com.enigmabridge.restgppro.utils.Consts.*;
 
 @org.springframework.context.annotation.Configuration
 @EnableAsync
@@ -50,12 +62,122 @@ public class Application implements CommandLineRunner {
     private ErrorAttributes errorAttributes;
 
     public static void main(String[] args) {
+        int status = Consts.SW_STAT_OK;
 
         // first, let's initialize the server instance by reading configuration data from
         // the disk
 
+        String globalfilename = "global.json";
+        File globalFile = new File(globalfilename);
+        String globalPathAbs = null;
+        try {
+            globalPathAbs = globalFile.getCanonicalPath();
+        } catch (Exception ex){
+        }
+        LOG.info("Reading global configuration file from", globalPathAbs);
+        if (globalPathAbs != null) {
+            if (!ReadGlobalConfiguration(globalFile)) {
+                LOG.error("Global configuration file not found or invalid", globalPathAbs);
+                status = SW_STAT_INVALID_GLOBAL_CONFIG;
+            }
+        } else {
+            LOG.error("Error when creating global file path");
+            status = SW_STAT_SYSTEM_ERROR;
+        }
+        if (status == SW_STAT_OK) {
+            SpringApplication.run(Application.class, args);
+        }
+    }
 
-        SpringApplication.run(Application.class, args);
+    private static boolean ReadGlobalConfiguration(File globalFile) {
+        boolean ok = true;
+        if (globalFile.exists()) {
+            String path = globalFile.getAbsolutePath();
+            try {
+                byte[] encoded = Files.readAllBytes(Paths.get(path));
+                String jsonString = new String(encoded, "UTF-8");
+                JSONObject json = new JSONObject(jsonString);
+                String protocolFolder = json.getString("protocolfolder");
+                File protFolder = new File(protocolFolder);
+                if (protFolder.exists() && protFolder.isDirectory()){
+                    GlobalConfiguration.setProtocolFolder(protFolder.getCanonicalPath());
+                } else {
+                    LOG.error("Protocol folder not found", protFolder.getCanonicalPath());
+                    ok = false;
+                }
+                if (ok){
+                    String instanceFolder = json.getString("instancefolder");
+                    File instFolder = new File(instanceFolder);
+                    if (instFolder.exists() && instFolder.isDirectory()){
+                        GlobalConfiguration.setInstanceFolder(instFolder.getCanonicalPath());
+                    } else {
+                        LOG.error("Instance folder not found", instFolder.getCanonicalPath());
+                        ok = false;
+                    }
+                }
+
+                // let's try to read info about readers
+                if (ok){
+                    JSONObject readers = json.getJSONObject("readers");
+                    boolean bScan = readers.getBoolean("use");
+                    JSONArray aList = readers.getJSONArray("list");
+                    String sSmartCardIO = readers.getString("smartcardio");
+                    GlobalConfiguration.setReaderUse(bScan);
+                    GlobalConfiguration.setReaderIO(sSmartCardIO);
+                    LinkedList<String> listOfReaders = new LinkedList<>();
+                    if (aList != null) {
+                        List<Object> rawReaders = aList.toList();
+                        for (Object oneReader : rawReaders) {
+                            if (oneReader instanceof String) {
+                                listOfReaders.add((String) oneReader);
+                            } else {
+                                LOG.error("Global configuration file - reader name is not a string", oneReader);
+                            }
+                        }
+                        GlobalConfiguration.setReaderSet(listOfReaders);
+                    }
+                }
+
+                // and info about simona boards
+                if (ok){
+                    JSONObject simonas = json.getJSONObject("simonas");
+                    boolean bScan = simonas.getBoolean("scan");
+                    JSONArray aList = simonas.getJSONArray("list");
+                    String sSmartCardIO = simonas.getString("smartcardio");
+
+                    GlobalConfiguration.setSimonaUse(bScan);
+                    GlobalConfiguration.setSimonaIO(sSmartCardIO);
+                    LinkedList<String> listOfReaders = new LinkedList<>();
+                    if (aList != null) {
+                        List<Object> rawReaders = aList.toList();
+                        for (Object oneReader : rawReaders) {
+                            if (oneReader instanceof String) {
+                                listOfReaders.add((String) oneReader);
+                            } else {
+                                LOG.error("Global configuration file - simona address is not a string", oneReader);
+                            }
+                        }
+                        GlobalConfiguration.setSimonaSet(listOfReaders);
+                    }
+
+                    if (bScan && ((listOfReaders == null)||(listOfReaders.isEmpty()))){
+                        LOG.error("Global configuration file - misconfiguration, empty Simona list");
+                        ok = false;
+                    }
+                }
+
+            } catch (IOException e) {
+                LOG.error("Global configuration file - error reading (OS)");
+                ok = false;
+            } catch (Exception e){
+                LOG.error("Global configuration file - JSON error ");
+                ok = false;
+            }
+        } else {
+            LOG.error("Global configuration file doesn't exist");
+            ok = false;
+        }
+        return ok;
     }
 
     @Bean
