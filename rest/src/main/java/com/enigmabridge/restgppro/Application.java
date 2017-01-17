@@ -124,6 +124,15 @@ public class Application implements CommandLineRunner {
             final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
             try {
                 final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+
+                // lets' now parse the output
+                String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                for (String line: outputLines){
+                    line = line.trim();
+                    if (line.startsWith("[*]")){
+                        GlobalConfiguration.addSimonaReader(line.substring(4));
+                    }
+                }
             } catch (Exception e) {
                 ok = false;
             }
