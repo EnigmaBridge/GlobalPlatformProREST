@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -72,7 +71,7 @@ public class Application implements CommandLineRunner {
         String globalPathAbs = null;
         try {
             globalPathAbs = globalFile.getCanonicalPath();
-        } catch (Exception ex){
+        } catch (Exception ex) {
         }
         LOG.info("Reading global configuration file from", globalPathAbs);
         if (globalPathAbs != null) {
@@ -84,9 +83,29 @@ public class Application implements CommandLineRunner {
             LOG.error("Error when creating global file path");
             status = SW_STAT_SYSTEM_ERROR;
         }
+
+        // the next step is to figure out what hardware we have available
+        if (status == SW_STAT_OK) {
+            if (!ScanReaders()) {
+                status = SW_STAT_READERS_ERROR;
+            }
+            if (!ScanSimonas()) {
+                status = SW_STAT_SIMONAS_ERROR;
+            }
+        }
+
         if (status == SW_STAT_OK) {
             SpringApplication.run(Application.class, args);
         }
+    }
+
+    private static boolean ScanSimonas() {
+        return false;
+    }
+
+    private static boolean ScanReaders() {
+
+        return false;
     }
 
     private static boolean ReadGlobalConfiguration(File globalFile) {
@@ -99,25 +118,25 @@ public class Application implements CommandLineRunner {
                 JSONObject json = new JSONObject(jsonString);
                 String protocolFolder = json.getString("protocolfolder");
                 File protFolder = new File(protocolFolder);
-                if (!protFolder.exists()){
+                if (!protFolder.exists()) {
                     LOG.warn("Creating protocol folder", protFolder.getCanonicalPath());
                     protFolder.mkdirs();
                 }
-                if (protFolder.exists() && protFolder.isDirectory()){
+                if (protFolder.exists() && protFolder.isDirectory()) {
                     GlobalConfiguration.setProtocolFolder(protFolder.getCanonicalPath());
                 } else {
                     LOG.error("Protocol folder not found", protFolder.getCanonicalPath());
                     ok = false;
                 }
-                if (ok){
+                if (ok) {
                     String instanceFolder = json.getString("instancefolder");
                     File instFolder = new File(instanceFolder);
-                    if (!instFolder.exists()){
+                    if (!instFolder.exists()) {
                         LOG.warn("Creating instance folder", instFolder.getCanonicalPath());
                         instFolder.mkdirs();
                     }
 
-                    if (instFolder.exists() && instFolder.isDirectory()){
+                    if (instFolder.exists() && instFolder.isDirectory()) {
                         GlobalConfiguration.setInstanceFolder(instFolder.getCanonicalPath());
                     } else {
                         LOG.error("Instance folder not found", instFolder.getCanonicalPath());
@@ -126,11 +145,11 @@ public class Application implements CommandLineRunner {
                 }
 
                 // let's try to read info about readers
-                if (ok){
+                if (ok) {
                     JSONObject readers = json.getJSONObject("readers");
                     boolean bScan = readers.getBoolean("use");
                     JSONArray aList;
-                    if (readers.isNull("list")){
+                    if (readers.isNull("list")) {
                         aList = null;
                     } else {
                         aList = readers.getJSONArray("list");
@@ -143,30 +162,39 @@ public class Application implements CommandLineRunner {
                     GlobalConfiguration.setReaderIO(sSmartCardIO);
                     LinkedList<String> listOfReaders = new LinkedList<>();
                     if (aList != null) {
-                        Iterator<Object> rawReaders = aList.iterator();
-                        while (rawReaders.hasNext()) {
-                            Object oneReader = rawReaders.next();
+                        for (Object oneReader : aList) {
                             if (oneReader instanceof String) {
                                 listOfReaders.add((String) oneReader);
                             } else {
                                 LOG.error("Global configuration file - reader name is not a string", oneReader);
+                                ok = false;
                             }
                         }
                         GlobalConfiguration.setReaderSet(listOfReaders);
                     }
+
+                    // test if the file exists
+                    if (ok && (sSmartCardIO != null)) {
+                        File fSmartCardIO = new File(sSmartCardIO);
+                        if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
+                            LOG.error("Global configuration file - smartcardio for readers doesn't exist", fSmartCardIO.getCanonicalPath());
+                            ok = false;
+                        }
+                    }
                 }
 
+
                 // and info about simona boards
-                if (ok){
+                if (ok) {
                     JSONObject simonas = json.getJSONObject("simonas");
                     boolean bScan = simonas.getBoolean("scan");
                     JSONArray aList = null;
-                    if (!simonas.isNull("addresses")){
+                    if (!simonas.isNull("addresses")) {
                         aList = simonas.getJSONArray("addresses");
                     }
 
                     String sSmartCardIO = null;
-                    if (!simonas.isNull("smartcardio")){
+                    if (!simonas.isNull("smartcardio")) {
                         sSmartCardIO = simonas.getString("smartcardio");
                     }
 
@@ -174,28 +202,35 @@ public class Application implements CommandLineRunner {
                     GlobalConfiguration.setSimonaIO(sSmartCardIO);
                     LinkedList<String> listOfReaders = new LinkedList<>();
                     if (aList != null) {
-                        Iterator<Object> rawReaders = aList.iterator();
-                        while (rawReaders.hasNext()) {
-                            Object oneReader = rawReaders.next();
+                        for (Object oneReader : aList) {
                             if (oneReader instanceof String) {
                                 listOfReaders.add((String) oneReader);
                             } else {
+                                ok = false;
                                 LOG.error("Global configuration file - simona address is not a string", oneReader);
                             }
                         }
                         GlobalConfiguration.setSimonaSet(listOfReaders);
                     }
 
-                    if (bScan && ((listOfReaders == null)||(listOfReaders.isEmpty()))){
+                    if (bScan && listOfReaders.isEmpty()) {
                         LOG.error("Global configuration file - misconfiguration, empty Simona list");
                         ok = false;
+                    }
+                    // test if the file exists
+                    if (ok && (sSmartCardIO != null)) {
+                        File fSmartCardIO = new File(sSmartCardIO);
+                        if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
+                            LOG.error("Global configuration file - smartcardio for simonas doesn't exist", fSmartCardIO.getCanonicalPath());
+                            ok = false;
+                        }
                     }
                 }
 
             } catch (IOException e) {
                 LOG.error("Global configuration file - error reading (OS)");
                 ok = false;
-            } catch (Exception e){
+            } catch (Exception e) {
                 LOG.error("Global configuration file - JSON error ");
                 ok = false;
             }
@@ -207,7 +242,9 @@ public class Application implements CommandLineRunner {
     }
 
     @Bean
-    public AppErrorController appErrorController(){return new AppErrorController(errorAttributes);}
+    public AppErrorController appErrorController() {
+        return new AppErrorController(errorAttributes);
+    }
 
     /*
     @Bean
