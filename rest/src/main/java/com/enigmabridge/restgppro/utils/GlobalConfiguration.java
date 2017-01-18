@@ -22,6 +22,7 @@
 
 package com.enigmabridge.restgppro.utils;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -39,7 +40,9 @@ public class GlobalConfiguration {
     private static LinkedList<String> simonaSet;
     private static LinkedList<String> emptyReaders = new LinkedList<>();
     private static LinkedList<String> readers = new LinkedList<>();
-    private static LinkedList<String> simonaReaders = new LinkedList<>();
+    private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
+    private static HashMap<String, HashMap<String,AppletStatus>> cards = new HashMap<>();
+    private static HashMap<String, LinkedList<AppletStatus>> applets = new HashMap<>();
 
     public static void setProtocolFolder(String path) {
         GlobalConfiguration.protocolFolder = path;
@@ -93,7 +96,41 @@ public class GlobalConfiguration {
         readers.add(reader);
     }
 
-    public static void addSimonaReader(String reader) {
-        simonaReaders.add(reader);
+    public static void addSimonaReader(String ip, String reader) {
+        simonaReaders.putIfAbsent(ip, new LinkedList<>());
+        simonaReaders.get(ip).add(reader);
+    }
+
+    public static LinkedList<String> getReaders() {
+
+        return readers;
+    }
+
+    public static void addApplet(String reader, String aid, AppletStatus status) {
+        cards.putIfAbsent(reader, new HashMap<>());
+        cards.get(reader).put(aid, status);
+
+        applets.putIfAbsent(aid, new LinkedList<>());
+        applets.get(aid).add(status);
+    }
+
+    public static void updateAppletStatus(String reader, String aid, AppletStatus.Status status){
+        if (cards.containsKey(reader)){
+            if (cards.get(reader).containsKey(aid)){
+                cards.get(reader).get(aid).setStatus(status);
+            }
+        }
+    }
+
+    public static HashMap<String, AppletStatus> getCardApplets(String reader) {
+        if (cards.containsKey(reader)){
+            return cards.get(reader);
+        } else {
+            return null;
+        }
+    }
+
+    public static LinkedList<String> getSimonaReaders(String simona) {
+        return simonaReaders.get(simona);
     }
 }

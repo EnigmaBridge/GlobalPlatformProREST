@@ -22,6 +22,7 @@
 
 package com.enigmabridge.restgppro;
 
+import com.enigmabridge.restgppro.utils.AppletStatus;
 import com.enigmabridge.restgppro.utils.Consts;
 import com.enigmabridge.restgppro.utils.GlobalConfiguration;
 import com.enigmabridge.restgppro.utils.NamedThreadFactory;
@@ -118,23 +119,66 @@ public class Application implements CommandLineRunner {
             ByteArrayOutputStream stdout = new ByteArrayOutputStream();
             ByteArrayOutputStream errout = new ByteArrayOutputStream();
 
-            final PrintStream psout = new PrintStream(stdout);
-            final PrintStream pserr = new PrintStream(errout);
-            final GPTool tool = new GPTool(psout, pserr);
-            final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+            PrintStream psout = new PrintStream(stdout);
+            PrintStream pserr = new PrintStream(errout);
+            GPTool tool = new GPTool(psout, pserr);
+            List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
             try {
                 final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
 
                 // lets' now parse the output
                 String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
-                for (String line: outputLines){
+                for (String line : outputLines) {
                     line = line.trim();
-                    if (line.startsWith("[*]")){
-                        GlobalConfiguration.addSimonaReader(line.substring(4));
+                    if (line.startsWith("[*]")) {
+                        GlobalConfiguration.addSimonaReader(oneIP, line.substring(4));
                     }
                 }
             } catch (Exception e) {
                 ok = false;
+            }
+
+        }
+
+        // let's check smart card readers
+        if (ok) {
+            // cmd = javacmd + "-d -l -terminals " + terminalloader + " --dump " + filename + " -r " + self.card + " -v"
+            for (String simona: GlobalConfiguration.getSimonaIPs()) {
+                String readerCmd = commandLine+simona + " -r ";
+                for (String reader : GlobalConfiguration.getSimonaReaders(simona)) {
+                    // cmd = javacmd + "-d -l --dump " + filename + " -r " + self.card + " -v"
+                    String request = readerCmd + "\"" + reader + "\"";
+                    AppletStatus appletStatus = new AppletStatus();
+                    appletStatus.setCommand(request);
+                    appletStatus.setStatus(AppletStatus.Status.UNDEF);
+                    appletStatus.setReader(reader);
+                    request += " -l";
+
+                    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+                    ByteArrayOutputStream errout = new ByteArrayOutputStream();
+
+                    PrintStream psout = new PrintStream(stdout);
+                    PrintStream pserr = new PrintStream(errout);
+                    GPTool tool = new GPTool(psout, pserr);
+                    List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+                    try {
+                        final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+
+                        // lets' now parse the output
+                        String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                        for (String line : outputLines) {
+                            line = line.trim();
+                            String[] lineParts = line.split(":");
+                            if (lineParts[0].equalsIgnoreCase("Applet")) {
+                                if (!lineParts[1].trim().startsWith("A000")) {
+                                    GlobalConfiguration.addApplet(reader, lineParts[1].trim(), appletStatus);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        ok = false;
+                    }
+                }
             }
 
         }
@@ -155,25 +199,65 @@ public class Application implements CommandLineRunner {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream errout = new ByteArrayOutputStream();
 
-        final PrintStream psout = new PrintStream(stdout);
-        final PrintStream pserr = new PrintStream(errout);
-        final GPTool tool = new GPTool(psout, pserr);
-        final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+        PrintStream psout = new PrintStream(stdout);
+        PrintStream pserr = new PrintStream(errout);
+        GPTool tool = new GPTool(psout, pserr);
+        List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         try {
             final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
 
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
-            for (String line: outputLines){
+            for (String line : outputLines) {
                 line = line.trim();
-                if (line.startsWith("[ ]")){
+                if (line.startsWith("[ ]")) {
                     GlobalConfiguration.addEmptyReader(line.substring(4));
-                } else if (line.startsWith("[*]")){
+                } else if (line.startsWith("[*]")) {
                     GlobalConfiguration.addReader(line.substring(4));
                 }
             }
         } catch (Exception e) {
             ok = false;
+        }
+
+        // let's check smartcards' content
+        if (ok) {
+            String readerCmd = commandLine + " -r ";
+            for (String reader : GlobalConfiguration.getReaders()) {
+                // cmd = javacmd + "-d -l --dump " + filename + " -r " + self.card + " -v"
+                request = readerCmd + "\"" + reader + "\"";
+                AppletStatus appletStatus = new AppletStatus();
+                appletStatus.setCommand(request);
+                appletStatus.setStatus(AppletStatus.Status.UNDEF);
+                appletStatus.setReader(reader);
+                request += " -l";
+
+                stdout = new ByteArrayOutputStream();
+                errout = new ByteArrayOutputStream();
+
+                psout = new PrintStream(stdout);
+                pserr = new PrintStream(errout);
+                tool = new GPTool(psout, pserr);
+                inputArgs = GPArgumentTokenizer.tokenize(request);
+                try {
+                    final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+
+                    // lets' now parse the output
+                    String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                    for (String line : outputLines) {
+                        line = line.trim();
+                        String[] lineParts = line.split(":");
+                        if (lineParts[0].trim().equalsIgnoreCase("Applet")) {
+                            if (!lineParts[1].trim().startsWith("A000")) {
+                                GlobalConfiguration.addApplet(reader, lineParts[1].trim(), appletStatus);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    ok = false;
+                }
+            }
+
         }
 
 
