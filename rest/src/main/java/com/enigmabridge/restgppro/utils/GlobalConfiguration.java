@@ -112,7 +112,7 @@ public class GlobalConfiguration {
         return readers;
     }
 
-    public static void addApplet(String reader, String aid, AppletStatus status) {
+    public static synchronized void addApplet(String reader, String aid, AppletStatus status) {
         cards.putIfAbsent(reader, new HashMap<>());
         cards.get(reader).put(aid, status);
 
