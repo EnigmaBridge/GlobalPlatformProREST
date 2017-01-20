@@ -34,10 +34,22 @@ public class AppletStatus {
     private int memoryDeselect = -1;
     private Status status = Status.UNDEF;
     private String command = null;
+    private String protocolInstance = null;
 
     public void setAppletID(byte[] raw, int counter, int length) {
         this.appletID = new byte[length];
         System.arraycopy(raw, counter, appletID, 0, length);
+    }
+
+    public String getAppletID(){
+        if (appletID!=null){
+            StringBuilder sb = new StringBuilder(appletID.length * 2);
+            for(byte b: appletID)
+                sb.append(String.format("%02x", b));
+            return sb.toString();
+        } else {
+            return null;
+        }
     }
 
     public void setMemoryPersistent(int memoryPersistent) {
@@ -82,6 +94,24 @@ public class AppletStatus {
 
     public void setCommand(String cmd) {
         command = cmd;
+    }
+
+    public void setBusy(String protocolInstance) {
+        status = Status.BUSY;
+        protocolInstance = protocolInstance;
+
+    }
+
+    public String getProtocolInstance(){
+        if (status == Status.BUSY) {
+            return protocolInstance;
+        } else {
+            return null;
+        }
+    }
+
+    public void setStatusReady() {
+        status = Status.READY;
     }
 
     public enum Status {UNDEF, ERROR, READY, BUSY}

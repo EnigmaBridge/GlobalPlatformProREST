@@ -49,13 +49,11 @@ public class GlobalConfiguration {
     private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
     private static ConcurrentHashMap<String, HashMap<String, AppletStatus>> cards = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<String, LinkedList<AppletStatus>> applets = new ConcurrentHashMap<>();
+    private static HashMap<String, ProtocolInstance> protocols = new HashMap<>();
+
 
     public static void setProtocolFolder(String path) {
         GlobalConfiguration.protocolFolder = path;
-    }
-
-    public static void setInstanceFolder(String instanceFolder) {
-        GlobalConfiguration.instanceFolder = instanceFolder;
     }
 
     public static void setReaderUse(boolean readerScanning) {
@@ -152,7 +150,7 @@ public class GlobalConfiguration {
         return result;
     }
 
-    public static LinkedList<AppletStatus> getAppletInstaces(String keys) {
+    public static LinkedList<AppletStatus> getAppletInstances(String keys) {
         return applets.get(keys);
     }
 
@@ -235,5 +233,58 @@ public class GlobalConfiguration {
         }
         result += Integer.toHexString(keys.length() / 2) + keys;
         return result;
+    }
+
+    public static String getInstanceFolder() {
+        return instanceFolder;
+    }
+
+    public static void setInstanceFolder(String instanceFolder) {
+        GlobalConfiguration.instanceFolder = instanceFolder;
+    }
+
+    public static void addProtocol(String id, ProtocolInstance prot) {
+        protocols.put(id, prot);
+    }
+
+    public static boolean isProtocol(String protocol) {
+        return (protocols.containsKey(protocol));
+    }
+
+    public static synchronized LinkedList<AppletStatus> getFreeSmartcards(String protocol, int size, String instance) {
+        LinkedList<AppletStatus> cards = new LinkedList<>();
+
+        if (isProtocol(protocol)) {
+            String aid = getProtocolAID(protocol);
+            if (applets.containsKey(aid)) {
+                for (AppletStatus one : applets.get(aid)) {
+                    if (one.getStatus() == AppletStatus.Status.READY) {
+                        cards.add(one);
+                        one.setBusy(instance);
+                        if (cards.size() == size) {
+                            break;
+                        }
+                    }
+                }
+                if (cards.size() < size) {
+                    for (AppletStatus one : cards) {
+                        one.setStatusReady();
+                    }
+                    cards = null;
+                }
+            }
+        } else {
+            cards = null;
+        }
+
+        return cards;
+    }
+
+    private static String getProtocolAID(String protocol) {
+        if (isProtocol(protocol)) {
+            return protocols.get(protocol).getID();
+        } else {
+            return null;
+        }
     }
 }

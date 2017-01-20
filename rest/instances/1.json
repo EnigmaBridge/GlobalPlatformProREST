@@ -1,0 +1,9 @@
+{
+  "id":"instanceid",
+  "processors": 4,
+  "password": "password",
+  "protocol":"MPCv1",
+  "group":[{"id":"16 characters","reader":"readername"}],
+  "status":"created/initialized",
+  "result":null
+}

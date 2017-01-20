@@ -82,10 +82,6 @@ public class RunnableGetStates implements Runnable {
                     }
                     counting = -1;
                 }
-                String[] lineParts = line.split(":");
-                if (lineParts[0].equalsIgnoreCase("Applet")) {
-
-                }
             }
         } catch (Exception e) {
             LOG.error("Exception in GPTool", errout);

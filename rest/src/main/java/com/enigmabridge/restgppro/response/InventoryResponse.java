@@ -20,18 +20,51 @@
  *     if you want to speak to us directly.
  */
 
-package com.enigmabridge.restgppro.utils;
+package com.enigmabridge.restgppro.response;
+
+import com.enigmabridge.restgppro.response.data.GeneralResponseData;
+import com.enigmabridge.restgppro.utils.Consts;
 
 /**
- * Created by Enigma Bridge Ltd (dan) on 13/01/2017.
+ * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
-public class Consts {
-    public static final int SW_STAT_PROCESSING_ERROR = 0x001;
-    public static final int SW_STAT_OK = 0x000;
-    public static final int SW_STAT_INPUT_PARSE_FAIL = 0x002;
-    public static final int SW_STAT_SYSTEM_ERROR = 0x003;
-    public static final int SW_STAT_INVALID_GLOBAL_CONFIG = 0x004;
-    public static final int SW_STAT_READERS_ERROR = 0005;
-    public static final int SW_STAT_SIMONAS_ERROR = 0006;
-    public static final int SW_STAT_UNKNOWN_PROTOCOL = 0007 ;
+public class InventoryResponse implements GeneralResponse {
+    private GeneralResponseData data = null;
+    private int status =Consts.SW_STAT_OK;
+
+    @Override
+    public void setResponse(GeneralResponseData data) {
+        this.data = data;
+    }
+
+    @Override
+    public GeneralResponseData getResponse() {
+
+        return data;
+    }
+
+    @Override
+    public void setStatus(int status) {
+
+    }
+
+    @Override
+    public int getStatus() {
+        return status;
+    }
+
+    @Override
+    public void setVersion(int version) {
+
+    }
+
+    @Override
+    public void setNonce(String nonce) {
+
+    }
+
+    @Override
+    public void setError(String errorString) {
+
+    }
 }

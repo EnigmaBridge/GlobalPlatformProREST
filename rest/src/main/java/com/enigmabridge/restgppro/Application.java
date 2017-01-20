@@ -107,7 +107,60 @@ public class Application implements CommandLineRunner {
     }
 
     private static void ReadProtocolInstances() {
-        
+        String folderPath = GlobalConfiguration.getInstanceFolder();
+        if (folderPath == null){
+            folderPath = ".";
+        }
+        File folder = new File(folderPath);
+        for (final File fileEntry : folder.listFiles()) {
+            if (!fileEntry.isDirectory()) {
+                String oneFile = fileEntry.getName();
+
+                LOG.info("Reading instance configuration file from", oneFile);
+
+                try {
+                    byte[] encoded = Files.readAllBytes(Paths.get(folderPath+"/"+oneFile));
+                    String jsonString = new String(encoded, "UTF-8");
+                    JSONObject json = new JSONObject(jsonString);
+
+                    ProtocolInstance prot = new ProtocolInstance();
+
+                    prot.setProcessors(json.getInt("processors"));
+                    prot.setID(json.getString("id"));
+                    prot.setProtocol(json.getString("protocol"));
+                    for (Object member : json.getJSONArray("group")) {
+                        if (member instanceof JSONObject) {
+                            String cardID = ((JSONObject) member).getString("id");
+                            String readerName = ((JSONObject) member).getString("reader");
+                            prot.addCard(cardID, readerName);
+                        }
+                    }
+                    // we are not reading "status" - take it from cards
+                    json.getJSONArray("status");
+
+                    if (!json.isNull("result")) {
+                        for (Object member : json.getJSONArray("result")) {
+                            if (member instanceof JSONObject) {
+                                String name = ((JSONObject) member).getString("name");
+                                String value = ((JSONObject) member).getString("value");
+                                prot.addResult(name, value);
+                            }
+                        }
+                    }
+
+                    if (prot.isCardNumberCorrect()) {
+                        GlobalConfiguration.addProtocol(prot.getID(), prot);
+                    } else {
+                        LOG.error("Incorrect number of cards in configuration file", oneFile);
+                    }
+
+                } catch (Exception ex) {
+                    LOG.error("Error reading instance configuration file", oneFile, ex.getMessage());
+                }
+                LOG.info("Finished processing configuration file", oneFile);
+
+            }
+        }
     }
 
     private static void UpdateAppletStates() {
@@ -116,7 +169,7 @@ public class Application implements CommandLineRunner {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
 
         for (String keys : GlobalConfiguration.getCardAppletsIDs()) {
-            LinkedList<AppletStatus> instances = GlobalConfiguration.getAppletInstaces(keys);
+            LinkedList<AppletStatus> instances = GlobalConfiguration.getAppletInstances(keys);
             for (AppletStatus oneInstance : instances) {
                 RunnableGetStates oneSC = new RunnableGetStates(keys, oneInstance);
                 executor.execute(oneSC);
