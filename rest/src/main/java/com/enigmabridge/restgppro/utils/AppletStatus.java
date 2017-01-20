@@ -27,35 +27,63 @@ package com.enigmabridge.restgppro.utils;
  */
 public class AppletStatus {
 
-    private String reader;
-
-    public enum Status {UNDEF, ERROR, READY, BUSY}
-
+    private String reader = null;
+    private byte[] appletID = null;
+    private int memoryPersistent = -1;
+    private int memoryReset = -1;
+    private int memoryDeselect = -1;
     private Status status = Status.UNDEF;
     private String command = null;
 
-    public void setReader(String reader) {
-        this.reader = reader;
+    public void setAppletID(byte[] raw, int counter, int length) {
+        this.appletID = new byte[length];
+        System.arraycopy(raw, counter, appletID, 0, length);
+    }
+
+    public void setMemoryPersistent(int memoryPersistent) {
+        this.memoryPersistent = memoryPersistent;
+    }
+
+    public void setMemoryReset(int memoryReset) {
+        this.memoryReset = memoryReset;
+    }
+
+    public void setMemoryDeselect(int memoryDeselect) {
+        this.memoryDeselect = memoryDeselect;
     }
 
     public String getReader() {
         return this.reader;
     }
 
-    public void setStatus(Status status){
-        this.status = status;
+    public void setReader(String reader) {
+        this.reader = reader;
     }
 
     public Status getStatus() {
         return this.status;
     }
 
-    public void setCommand(String cmd){
-        command = cmd;
+    public void setStatus(int status) {
+        if (status < 1) {
+            this.status = Status.ERROR;
+        } else if (status == 1) {
+            this.status = Status.READY;
+        } else if (status == 2) {
+            this.status = Status.BUSY;
+        } else {
+            this.status = Status.UNDEF;
+        }
     }
 
     public String getCommand() {
         return command;
     }
+
+    public void setCommand(String cmd) {
+        command = cmd;
+    }
+
+    public enum Status {UNDEF, ERROR, READY, BUSY}
 
 }

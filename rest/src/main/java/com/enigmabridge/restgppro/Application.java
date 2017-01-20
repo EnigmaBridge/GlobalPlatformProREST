@@ -49,8 +49,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static com.enigmabridge.restgppro.utils.Consts.*;
 
@@ -100,8 +99,61 @@ public class Application implements CommandLineRunner {
             }
         }
 
+        // now we have information about all the applets available - let's check which are MPC
+        UpdateAppletStates();
+
         if (status == SW_STAT_OK) {
             SpringApplication.run(Application.class, args);
+        }
+    }
+
+    private static void UpdateAppletStates() {
+
+        for (String keys : GlobalConfiguration.getCardAppletsIDs()) {
+            LinkedList<AppletStatus> instances = GlobalConfiguration.getAppletInstaces(keys);
+            for (AppletStatus oneInstance : instances) {
+                String request = oneInstance.getCommand() + " -a "
+                        + GlobalConfiguration.getSelectCommand(keys) + " -a "
+                        + GlobalConfiguration.getStatusAPDU();
+
+                ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+                ByteArrayOutputStream errout = new ByteArrayOutputStream();
+
+                PrintStream psout = new PrintStream(stdout);
+                PrintStream pserr = new PrintStream(errout);
+                GPTool tool = new GPTool(psout, pserr);
+                List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+                try {
+                    final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+
+                    // lets' now parse the output
+                    String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                    int counting = -1;
+                    for (String line : outputLines) {
+                        if (counting >= 0) {
+                            counting += 1;
+                        } else {
+                            line = line.trim();
+                            if (line.equalsIgnoreCase("# Sent")) {
+                                counting = 0;
+                            }
+                        }
+                        if (counting == 7) {
+                            line = line.trim();
+                            if (line.substring(line.length()-4).equals("9000")) {
+                                GlobalConfiguration.parseAppletStatus(oneInstance, line);
+                            }
+                            counting = -1;
+                        }
+                        String[] lineParts = line.split(":");
+                        if (lineParts[0].equalsIgnoreCase("Applet")) {
+
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.error("Exception in GPTool", errout);
+                }
+            }
         }
     }
 
@@ -142,43 +194,55 @@ public class Application implements CommandLineRunner {
 
         // let's check smart card readers
         if (ok) {
+            BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
             // cmd = javacmd + "-d -l -terminals " + terminalloader + " --dump " + filename + " -r " + self.card + " -v"
-            for (String simona: GlobalConfiguration.getSimonaIPs()) {
-                String readerCmd = commandLine+simona + " -r ";
+            for (String simona : GlobalConfiguration.getSimonaIPs()) {
+                String readerCmd = commandLine + simona + " -r ";
                 for (String reader : GlobalConfiguration.getSimonaReaders(simona)) {
                     // cmd = javacmd + "-d -l --dump " + filename + " -r " + self.card + " -v"
-                    String request = readerCmd + "\"" + reader + "\"";
-                    AppletStatus appletStatus = new AppletStatus();
-                    appletStatus.setCommand(request);
-                    appletStatus.setStatus(AppletStatus.Status.UNDEF);
-                    appletStatus.setReader(reader);
-                    request += " -l";
+                    Runnable oneSC = () -> {
+                        String localReader = reader;
+                        String localCmd = readerCmd;
+                        String request = localCmd + "\"" + localReader + "\"";
+                        AppletStatus appletStatus = new AppletStatus();
+                        appletStatus.setCommand(request);
+                        appletStatus.setStatus(-1);
+                        appletStatus.setReader(localReader);
+                        request += " -l";
 
-                    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-                    ByteArrayOutputStream errout = new ByteArrayOutputStream();
+                        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+                        ByteArrayOutputStream errout = new ByteArrayOutputStream();
 
-                    PrintStream psout = new PrintStream(stdout);
-                    PrintStream pserr = new PrintStream(errout);
-                    GPTool tool = new GPTool(psout, pserr);
-                    List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
-                    try {
-                        final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+                        PrintStream psout = new PrintStream(stdout);
+                        PrintStream pserr = new PrintStream(errout);
+                        GPTool tool = new GPTool(psout, pserr);
+                        List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
+                        try {
+                            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
 
-                        // lets' now parse the output
-                        String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
-                        for (String line : outputLines) {
-                            line = line.trim();
-                            String[] lineParts = line.split(":");
-                            if (lineParts[0].equalsIgnoreCase("Applet")) {
-                                if (!lineParts[1].trim().startsWith("A000")) {
-                                    GlobalConfiguration.addApplet(reader, lineParts[1].trim(), appletStatus);
+                            // lets' now parse the output
+                            String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                            for (String line : outputLines) {
+                                line = line.trim();
+                                String[] lineParts = line.split(":");
+                                if (lineParts[0].equalsIgnoreCase("Applet")) {
+                                    if (!lineParts[1].trim().startsWith("A000")) {
+                                        GlobalConfiguration.addApplet(localReader, lineParts[1].trim(), appletStatus);
+                                    }
                                 }
                             }
+                        } catch (Exception e) {
                         }
-                    } catch (Exception e) {
-                        ok = false;
-                    }
+                    };
+                    executor.execute(oneSC);
+
                 }
+            }
+            executor.shutdown();
+            try {
+                executor.awaitTermination(50, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
             }
 
         }
@@ -228,7 +292,7 @@ public class Application implements CommandLineRunner {
                 request = readerCmd + "\"" + reader + "\"";
                 AppletStatus appletStatus = new AppletStatus();
                 appletStatus.setCommand(request);
-                appletStatus.setStatus(AppletStatus.Status.UNDEF);
+                appletStatus.setStatus(-1);
                 appletStatus.setReader(reader);
                 request += " -l";
 

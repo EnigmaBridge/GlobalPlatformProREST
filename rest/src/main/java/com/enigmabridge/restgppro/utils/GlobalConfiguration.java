@@ -24,11 +24,17 @@ package com.enigmabridge.restgppro.utils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 17/01/2017.
  */
 public class GlobalConfiguration {
+    private final static byte STATUS_CARDID = 0x40;
+    private final static byte STATUS_KEYPAIR = 0x41;
+    private final static byte STATUS_EPHEMERAL = 0x42;
+    private final static byte STATUS_MEMORY = 0x43;
+
 
     private static String instanceFolder = null;
     private static String protocolFolder = null;
@@ -41,8 +47,8 @@ public class GlobalConfiguration {
     private static LinkedList<String> emptyReaders = new LinkedList<>();
     private static LinkedList<String> readers = new LinkedList<>();
     private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
-    private static HashMap<String, HashMap<String,AppletStatus>> cards = new HashMap<>();
-    private static HashMap<String, LinkedList<AppletStatus>> applets = new HashMap<>();
+    private static ConcurrentHashMap<String, HashMap<String, AppletStatus>> cards = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, LinkedList<AppletStatus>> applets = new ConcurrentHashMap<>();
 
     public static void setProtocolFolder(String path) {
         GlobalConfiguration.protocolFolder = path;
@@ -56,12 +62,12 @@ public class GlobalConfiguration {
         GlobalConfiguration.readerUse = readerScanning;
     }
 
-    public static void setReaderIO(String readerIO) {
-        GlobalConfiguration.readerIO = readerIO;
-    }
-
     public static String getReaderIO() {
         return GlobalConfiguration.readerIO;
+    }
+
+    public static void setReaderIO(String readerIO) {
+        GlobalConfiguration.readerIO = readerIO;
     }
 
     public static void setReaderSet(LinkedList<String> readerSet) {
@@ -72,12 +78,12 @@ public class GlobalConfiguration {
         GlobalConfiguration.simonaUse = simonaUse;
     }
 
-    public static void setSimonaIO(String simonaIO) {
-        GlobalConfiguration.simonaIO = simonaIO;
-    }
-
     public static String getSimonaIO() {
         return GlobalConfiguration.simonaIO;
+    }
+
+    public static void setSimonaIO(String simonaIO) {
+        GlobalConfiguration.simonaIO = simonaIO;
     }
 
     public static void setSimonaSet(LinkedList<String> simonaSet) {
@@ -114,16 +120,16 @@ public class GlobalConfiguration {
         applets.get(aid).add(status);
     }
 
-    public static void updateAppletStatus(String reader, String aid, AppletStatus.Status status){
-        if (cards.containsKey(reader)){
-            if (cards.get(reader).containsKey(aid)){
+    public static void updateAppletStatus(String reader, String aid, int status) {
+        if (cards.containsKey(reader)) {
+            if (cards.get(reader).containsKey(aid)) {
                 cards.get(reader).get(aid).setStatus(status);
             }
         }
     }
 
     public static HashMap<String, AppletStatus> getCardApplets(String reader) {
-        if (cards.containsKey(reader)){
+        if (cards.containsKey(reader)) {
             return cards.get(reader);
         } else {
             return null;
@@ -131,6 +137,103 @@ public class GlobalConfiguration {
     }
 
     public static LinkedList<String> getSimonaReaders(String simona) {
-        return simonaReaders.get(simona);
+        LinkedList<String> result = simonaReaders.get(simona);
+        if (result == null) {
+            result = new LinkedList<>();
+        }
+        return result;
+    }
+
+    public static LinkedList<String> getCardAppletsIDs() {
+        LinkedList<String> result = new LinkedList<>();
+        for (String test : applets.keySet()) {
+            result.add(test);
+        }
+        return result;
+    }
+
+    public static LinkedList<AppletStatus> getAppletInstaces(String keys) {
+        return applets.get(keys);
+    }
+
+    public static String getStatusAPDU() {
+        String statusAPDU = "B0020000";
+        return statusAPDU;
+    }
+
+    /**
+     * @param apdu
+     * @return 0 -> not MPC
+     * 1 -> reset
+     * 2 -> busy
+     * -- for future
+     * 2 -> hashes exchanged - ephemeral
+     * 4 -> keys combined  - ephemeral
+     * 8 -> hashes exchanged - permanent
+     * 16 -> keys combined  - - permanent
+     */
+    public static int parseAppletStatus(AppletStatus applet, String apdu) {
+        int status = 0;
+
+        if (((apdu.length() % 2) == 0) && (apdu.length() > 4)) {
+            final byte result[] = new byte[apdu.length() / 2];
+            final char enc[] = apdu.toCharArray();
+            for (int i = 0; i < enc.length; i += 2) {
+                StringBuilder curr = new StringBuilder(2);
+                curr.append(enc[i]).append(enc[i + 1]);
+                result[i / 2] = (byte) Integer.parseInt(curr.toString(), 16);
+            }
+            int counter = 0;
+            int length = 0;
+            if (result[counter] == STATUS_CARDID) {
+                length = (result[counter + 1] & 0xff) * 256 + (result[counter + 2] & 0xff);
+                counter = counter + 3;
+                applet.setAppletID(result, counter, length);
+                counter += length;
+                if (result[counter] == STATUS_KEYPAIR) {
+                    counter += 3;
+                    int stat = (result[counter] & 0xff) * 256 + (result[counter + 1] & 0xff);
+                    if (stat == 65535) {
+                        status = 1;
+                    } else {
+                        status = 2;
+                    }
+                    counter += 2;
+                    if (result[counter] != STATUS_EPHEMERAL) {
+                        status = 0;
+                    } else {
+                        counter += 5;
+                        if (result[counter] != STATUS_MEMORY) {
+                            status = 0;
+                        } else {
+                            length = (result[counter + 1] & 0xff) * 256 + (result[counter + 2] & 0xff);
+                            if (length != 6) {
+                                status = 0;
+                            } else {
+                                counter += 3;
+                                stat = (result[counter] & 0xff) * 256 + (result[counter + 1] & 0xff);
+                                applet.setMemoryPersistent(stat);
+                                stat = (result[counter + 2] & 0xff) * 256 + (result[counter + 3] & 0xff);
+                                applet.setMemoryReset(stat);
+                                stat = (result[counter + 4] & 0xff) * 256 + (result[counter + 5] & 0xff);
+                                applet.setMemoryDeselect(stat);
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        applet.setStatus(status);
+        return status;
+    }
+
+    public static String getSelectCommand(String keys) {
+        String result = "00A40400";
+        if (keys.length() < 32) {
+            result += "0";
+        }
+        result += Integer.toHexString(keys.length() / 2) + keys;
+        return result;
     }
 }

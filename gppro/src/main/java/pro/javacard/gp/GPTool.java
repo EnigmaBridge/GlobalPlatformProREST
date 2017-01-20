@@ -20,27 +20,11 @@
  */
 package pro.javacard.gp;
 
-import java.io.*;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-
-import javax.smartcardio.Card;
-import javax.smartcardio.CardException;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CardTerminals;
-import javax.smartcardio.CardTerminals.State;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.TerminalFactory;
-
-import com.google.common.base.Joiner;
-
 import apdu4j.APDUReplayProvider;
 import apdu4j.HexUtils;
 import apdu4j.LoggingCardTerminal;
 import apdu4j.TerminalManager;
+import com.google.common.base.Joiner;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -53,6 +37,15 @@ import pro.javacard.gp.GPRegistryEntry.Privilege;
 import pro.javacard.gp.GPRegistryEntry.Privileges;
 import pro.javacard.gp.GlobalPlatform.APDUMode;
 import pro.javacard.gp.GlobalPlatform.GPSpec;
+
+import javax.smartcardio.*;
+import javax.smartcardio.CardTerminals.State;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 
 
 public final class GPTool {
@@ -401,6 +394,8 @@ public final class GPTool {
 					if (args.has(OPT_DUMP)) {
 						File f = (File) args.valueOf(OPT_DUMP);
 						o = new FileOutputStream(f);
+					} else {
+						o = this.out;
 					}
 					reader = LoggingCardTerminal.getInstance(reader, o);
 				}
