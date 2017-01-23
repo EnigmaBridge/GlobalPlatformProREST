@@ -99,6 +99,8 @@ public class Application implements CommandLineRunner {
         // now we have information about all the applets available - let's check which are MPC
         UpdateAppletStates();
 
+        ReadProtocols();
+
         ReadProtocolInstances();
 
         if (status == SW_STAT_OK) {
@@ -106,9 +108,112 @@ public class Application implements CommandLineRunner {
         }
     }
 
+    private static void ReadProtocols() {
+        String folderPath = GlobalConfiguration.getProtocolFolder();
+        if (folderPath == null) {
+            folderPath = ".";
+        }
+        File folder = new File(folderPath);
+        for (final File fileEntry : folder.listFiles()) {
+            if (!fileEntry.isDirectory()) {
+                String oneFile = fileEntry.getName();
+
+                LOG.info("Reading instance configuration file from", oneFile);
+                try {
+                    byte[] encoded = Files.readAllBytes(Paths.get(folderPath + "/" + oneFile));
+                    String jsonString = new String(encoded, "UTF-8");
+                    JSONObject json = new JSONObject(jsonString);
+
+                    ProtocolDefinition prot = new ProtocolDefinition();
+                    prot.setName(json.getString("protocol"));
+                    prot.setAID(json.getString("aid"));
+
+                    //TODO later
+                    json.getJSONArray("names");
+
+                    JSONArray apdus = json.getJSONArray("apdu");
+                    for (Object apdu:apdus){
+                        if (apdu instanceof JSONObject){
+                            String name = ((JSONObject)apdu).getString("name").toLowerCase();
+                            String cla = ((JSONObject)apdu).getString("cla");
+                            String ins = ((JSONObject)apdu).getString("ins");
+                            String p1 = ((JSONObject)apdu).getString("p1");
+                            String p2= ((JSONObject) apdu).getString("p2");
+                            String data;
+                            if (((JSONObject)apdu).isNull("data")){
+                                data = null;
+                            } else {
+                                data = ((JSONObject) apdu).getString("data");
+                            }
+                            String result = ((JSONObject)apdu).getString("result");
+                            if (data.startsWith("@")){
+                                if (!prot.addData(data)){
+                                    LOG.error("Data in the protocol is not known", data);
+                                }
+                            }
+                            prot.addInstruction(name, cla, ins, p1, p2, data, result);
+
+                        }
+                    }
+
+                    JSONArray phases = json.getJSONArray("phases");
+                    for (Object phase:phases){
+                        if (phase instanceof JSONObject){
+                            String phaseName = ((JSONObject)phase).getString("name");
+                            String phaseResult = ((JSONObject)phase).getString("result");
+                            JSONArray phaseInput = ((JSONObject)phase).getJSONArray("input");
+                            LinkedList<String>inputs = new LinkedList<>();
+                            for (Object oneInput: phaseInput){
+                                inputs.add((String)oneInput);
+                            }
+                            prot.addPhase(phaseName, phaseResult, inputs);
+                            LinkedList<String> instructions = new LinkedList<>();
+                            JSONArray jsonInstructions = ((JSONObject)phase).getJSONArray("apdus");
+                            boolean problem = false;
+                            for (Object step:jsonInstructions){
+                                String apdu = ((JSONObject)step).getString("apdu");
+                                String from = ((JSONObject)step).getString("from");
+                                String to = ((JSONObject)step).getString("to");
+                                String result = null;
+                                if (((JSONObject)step).has("result")){
+                                    result = ((JSONObject)step).getString("result");
+                                } else {
+                                    result = null;
+                                }
+                                if (prot.isParty(from) && prot.isParty(to)){
+                                    prot.addPhaseStep(phaseName, apdu, from, to, result);
+                                    LOG.debug("New instruction added to phase", apdu, phaseName);
+                                } else {
+                                    problem = true;
+                                    LOG.error("Incorrect instruction into phase", apdu, phaseName);
+                                }
+
+                            }
+                            if (problem){
+                                prot.removePhase(phaseName);
+                            }
+
+                        }
+                    }
+                    json.getString("create");
+                    json.getString("destroy");
+
+
+
+
+                    //....
+                } catch (Exception ex) {
+                    LOG.error("Error reading instance configuration file", oneFile, ex.getMessage());
+                }
+                LOG.info("Finished processing configuration file", oneFile);
+
+            }
+        }
+    }
+
     private static void ReadProtocolInstances() {
         String folderPath = GlobalConfiguration.getInstanceFolder();
-        if (folderPath == null){
+        if (folderPath == null) {
             folderPath = ".";
         }
         File folder = new File(folderPath);
@@ -119,7 +224,7 @@ public class Application implements CommandLineRunner {
                 LOG.info("Reading instance configuration file from", oneFile);
 
                 try {
-                    byte[] encoded = Files.readAllBytes(Paths.get(folderPath+"/"+oneFile));
+                    byte[] encoded = Files.readAllBytes(Paths.get(folderPath + "/" + oneFile));
                     String jsonString = new String(encoded, "UTF-8");
                     JSONObject json = new JSONObject(jsonString);
 

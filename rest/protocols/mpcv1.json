@@ -163,6 +163,7 @@
     "phases":[
     {
         "name":"keygen",
+        "input":["@players"],
         "apdus":[
             {
             "apdu":"INS_KEYGEN_INIT",

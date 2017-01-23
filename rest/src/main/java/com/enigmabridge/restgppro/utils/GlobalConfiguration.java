@@ -287,4 +287,8 @@ public class GlobalConfiguration {
             return null;
         }
     }
+
+    public static String getProtocolFolder() {
+        return protocolFolder;
+    }
 }
