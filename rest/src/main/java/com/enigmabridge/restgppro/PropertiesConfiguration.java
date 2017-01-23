@@ -98,7 +98,7 @@ class PropertiesConfiguration {
         try {
             LOG.info("Using config file: {}", resource.get().getFile());
         } catch (Exception e) {
-            LOG.error("Could not get file info", e);
+            LOG.error("Could not get file info {}", e);
         }
 
         yaml.setResources(resource.get());

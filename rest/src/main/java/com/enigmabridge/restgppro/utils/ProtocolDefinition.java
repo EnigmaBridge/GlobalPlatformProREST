@@ -48,7 +48,7 @@ public class ProtocolDefinition {
     }
 
     public void setAID(String AID) {
-        this.AID = AID;
+        this.AID = AID.toUpperCase();
     }
 
     public boolean isParty(String namein) {
@@ -94,12 +94,12 @@ public class ProtocolDefinition {
         boolean success = false;
 
         if ((cla.length() == 2) && (cla.matches("\\p{XDigit}+"))) {
-            instruction.cls = name.toUpperCase();
+            instruction.cls = cla.toUpperCase();
         } else {
             return false;
         }
         if ((ins.length() == 2) && (ins.matches("\\p{XDigit}+"))) {
-            instruction.ins = name.toUpperCase();
+            instruction.ins = ins.toUpperCase();
         } else {
             return false;
         }
@@ -119,21 +119,21 @@ public class ProtocolDefinition {
         } else {
             return false;
         }
-        if (datain.startsWith("@")) {
+        if (datain == null) {
+            instruction.data = null;
+        } else if (datain.startsWith("@")) {
             apduData.add(datain);
             instruction.data = datain;
-        } else if (datain == null) {
-            instruction.data = null;
         } else if ((datain.length() == 2) && (datain.matches("\\p{XDigit}+"))) {
             instruction.data = datain;
         } else {
             return false;
         }
-        if (result.startsWith("@")) {
+        if (result == null) {
+            instruction.result = null;
+        } else if (result.startsWith("@")) {
             apduResult.add(result);
             instruction.result = result;
-        } else if (result == null) {
-            instruction.result = null;
         } else {
             return false;
         }

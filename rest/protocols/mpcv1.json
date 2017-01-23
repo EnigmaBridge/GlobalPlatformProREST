@@ -8,8 +8,8 @@
         "name":"INS_SETUP",
         "cla": "B0",  
         "ins": "01",  
-        "p1": "processors",
-        "p2": "dstcard",
+        "p1": "@processors",
+        "p2": "@dstcard",
         "data": null,
         "result": null
     },
@@ -26,36 +26,36 @@
         "name":"INS_KEYGEN_INIT",
         "cla": "B0",  
         "ins": "10",   
-        "p1": "processors",
-        "p2": "dstcard",
+        "p1": "@processors",
+        "p2": "@dstcard",
         "data": null,
         "result": null
     },
     {
         "name":"INS_KEYGEN_RETRIEVE_HASH",
         "cla": "B0",          
-"ins": 11,   
+        "ins": "11",   
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "hash"
+        "result": "@hash"
     },
     {
         "name":"INS_KEYGEN_STORE_HASH",
         "cla": "B0",  
         "ins": "12",   
-        "p1": "srccard",
+        "p1": "@srccard",
         "p2": "00",
-        "data": "hash", 
+        "data": "@hash", 
         "result": null
     },
     {
         "name":"INS_KEYGEN_STORE_PUBKEY",
         "cla": "B0",  
         "ins": "13",  
-        "p1": "srccard",
+        "p1": "@srccard",
         "p2": "00",
-        "data": "pubkey",
+        "data": "@pubkey",
         "result": null
     },
     {
@@ -65,7 +65,7 @@
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "pubkey"
+        "result": "@pubkey"
     },
     {
         "name":"INS_KEYGEN_RETRIEVE_AGG_PUBKEY",
@@ -74,7 +74,7 @@
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "aggkey"
+        "result": "@aggkey"
     },
     {
         "name":"INS_ENCRYPT",
@@ -82,8 +82,8 @@
         "ins": "50",  
         "p1": "00",
         "p2": "00",
-        "data": "ecpoint",
-        "result": "encecpoint"
+        "data": "@ecpoint",
+        "result": "@encecpoint"
     },
     {
         "name":"INS_DECRYPT",
@@ -91,15 +91,15 @@
         "ins": "51",   
         "p1": "00",
         "p2": "00",
-        "data": "ciphertext",
-        "result": "dececpoint"
+        "data": "@ciphertext",
+        "result": "@dececpoint"
     },
     {
         "name":"INS_SIGN_INIT",
         "cla": "B0",  
         "ins": "70",   
-        "p1": "processors",
-        "p2": "dstcard",
+        "p1": "@processors",
+        "p2": "@dstcard",
         "data": null,
         "result": null
     },
@@ -110,24 +110,24 @@
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "signhash"
+        "result": "@signhash"
     },
     {
         "name":"INS_SIGN_STORE_HASH",
         "cla": "B0",  
         "ins": "72",   
-        "p1": "srccard",
+        "p1": "@srccard",
         "p2": "00",
-        "data": "signhash", 
+        "data": "@signhash", 
         "result": null
     },
     {
         "name":"INS_SIGN_STORE_RI",
         "cla": "B0",  
         "ins": "73",  
-        "p1": "srccard",
+        "p1": "@srccard",
         "p2": "00",
-        "data": "signri", 
+        "data": "@signri", 
         "result": null
     },
     {
@@ -137,7 +137,7 @@
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "signri"
+        "result": "@signri"
     },
     {
         "name":"INS_SIGN_RETRIEVE_R",
@@ -146,16 +146,16 @@
         "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "signr"
+        "result": "@signr"
     },
     {
         "name":"INS_SIGN",
         "cla": "B0",  
-        "ins": "77",   
+        "ins": 77,   
         "p1": "00",
         "p2": "00",
-        "data": "signplaintext",
-        "result": "signature"
+        "data": "@signplaintext",
+        "result": "@signature"
     }
     ],
     "create":"INS_SETUP",
@@ -163,90 +163,90 @@
     "phases":[
     {
         "name":"keygen",
-        "input":["@players"],
+        "input":["@processors"],
         "apdus":[
             {
             "apdu":"INS_KEYGEN_INIT",
-            "from":"server",
-            "to":"worker"
+            "from":"@server",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_HASH",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_STORE_HASH",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_PUBKEY",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_STORE_PUBKEY",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_AGG_PUBKEY",
-            "from":"worker",
-            "to":"server",
-            "result":"aggkey"
+            "from":"@worker",
+            "to":"@server",
+            "result":"@aggkey"
             }
         ],
-        "result":"aggkey"
+        "result":"@aggkey"
     },
     {
         "name":"decrypt",
         "apdus":[
             {
             "apdu":"INS_DECRYPT",
-            "from":"server",
-            "to":"worker",
-            "result":"decrypt"
+            "from":"@server",
+            "to":"@worker",
+            "result":"@decrypt"
             }
        ],
-        "result":"decrypt"
+        "result":"@decrypt"
     },
     {
         "name":"sign",
         "apdus":[
             {
             "apdu":"INS_SIGN_INIT",
-            "from":"server",
-            "to":"worker"
+            "from":"@server",
+            "to":"@worker"
             },
             {
             "apdu":"INS_SIGN_RETRIEVE_HASH",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_SIGN_STORE_HASH",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_RI",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_KEYGEN_STORE_RI",
-            "from":"worker",
-            "to":"worker"
+            "from":"@worker",
+            "to":"@worker"
             },
             {
             "apdu":"INS_SIGN",
-            "from":"worker",
-            "to":"server",
-            "result":"signature"
+            "from":"@worker",
+            "to":"@server",
+            "result":"@signature"
             }
         ],
-        "result":"signature"
+        "result":"@signature"
     } 
     ]
 }

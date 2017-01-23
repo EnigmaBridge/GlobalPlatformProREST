@@ -84,7 +84,7 @@ public class RunnableGetStates implements Runnable {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Exception in GPTool", errout);
+            LOG.error("Exception in GPTool: {}", errout);
         }
     }
 }

@@ -50,7 +50,7 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         final Object principal = authentication.getPrincipal();
-        LOG.debug("Principal: " + principal);
+        LOG.debug("Principal: {}" + principal);
 
         Optional<String> token = (Optional) principal;
         if (!token.isPresent() || token.get().isEmpty()) {

@@ -75,10 +75,10 @@ public class Application implements CommandLineRunner {
             globalPathAbs = globalFile.getCanonicalPath();
         } catch (Exception ex) {
         }
-        LOG.info("Reading global configuration file from", globalPathAbs);
+        LOG.info("Reading global configuration file from {}", globalPathAbs);
         if (globalPathAbs != null) {
             if (!ReadGlobalConfiguration(globalFile)) {
-                LOG.error("Global configuration file not found or invalid", globalPathAbs);
+                LOG.error("Global configuration file not found or invalid {}", globalPathAbs);
                 status = SW_STAT_INVALID_GLOBAL_CONFIG;
             }
         } else {
@@ -117,19 +117,25 @@ public class Application implements CommandLineRunner {
         for (final File fileEntry : folder.listFiles()) {
             if (!fileEntry.isDirectory()) {
                 String oneFile = fileEntry.getName();
-
-                LOG.info("Reading instance configuration file from", oneFile);
+                if (!oneFile.endsWith(".json")){
+                    continue;
+                }
+                LOG.info("Reading instance configuration file from {}", oneFile);
+                JSONObject json;
+                String lastTag = null;
                 try {
                     byte[] encoded = Files.readAllBytes(Paths.get(folderPath + "/" + oneFile));
                     String jsonString = new String(encoded, "UTF-8");
-                    JSONObject json = new JSONObject(jsonString);
+                    json = new JSONObject(jsonString);
 
                     ProtocolDefinition prot = new ProtocolDefinition();
                     prot.setName(json.getString("protocol"));
                     prot.setAID(json.getString("aid"));
 
                     //TODO later
-                    json.getJSONArray("names");
+                    if (!json.isNull("name")) {
+                        json.getJSONArray("names");
+                    }
 
                     JSONArray apdus = json.getJSONArray("apdu");
                     for (Object apdu:apdus){
@@ -139,16 +145,27 @@ public class Application implements CommandLineRunner {
                             String ins = ((JSONObject)apdu).getString("ins");
                             String p1 = ((JSONObject)apdu).getString("p1");
                             String p2= ((JSONObject) apdu).getString("p2");
+                            lastTag = name;
                             String data;
                             if (((JSONObject)apdu).isNull("data")){
                                 data = null;
                             } else {
                                 data = ((JSONObject) apdu).getString("data");
+                                if (data.startsWith("@")){
+                                    if (!prot.addData(data)){
+                                        LOG.error("Data in the protocol is not known: {}", data);
+                                    }
+                                }
                             }
-                            String result = ((JSONObject)apdu).getString("result");
-                            if (data.startsWith("@")){
-                                if (!prot.addData(data)){
-                                    LOG.error("Data in the protocol is not known", data);
+                            String result;
+                            if (((JSONObject)apdu).isNull("result")){
+                                result = null;
+                            } else {
+                                result =((JSONObject)apdu).getString("result");
+                                if (result.startsWith("@")){
+                                    prot.addResult(result);
+                                } else {
+                                    LOG.info("A result of APDU is not a name {} {}", name, result);
                                 }
                             }
                             prot.addInstruction(name, cla, ins, p1, p2, data, result);
@@ -160,6 +177,7 @@ public class Application implements CommandLineRunner {
                     for (Object phase:phases){
                         if (phase instanceof JSONObject){
                             String phaseName = ((JSONObject)phase).getString("name");
+                            lastTag = phaseName;
                             String phaseResult = ((JSONObject)phase).getString("result");
                             JSONArray phaseInput = ((JSONObject)phase).getJSONArray("input");
                             LinkedList<String>inputs = new LinkedList<>();
@@ -182,10 +200,10 @@ public class Application implements CommandLineRunner {
                                 }
                                 if (prot.isParty(from) && prot.isParty(to)){
                                     prot.addPhaseStep(phaseName, apdu, from, to, result);
-                                    LOG.debug("New instruction added to phase", apdu, phaseName);
+                                    LOG.debug("New instruction added to phase {} {}", apdu, phaseName);
                                 } else {
                                     problem = true;
-                                    LOG.error("Incorrect instruction into phase", apdu, phaseName);
+                                    LOG.error("Incorrect instruction into phase {} {}", apdu, phaseName);
                                 }
 
                             }
@@ -203,9 +221,9 @@ public class Application implements CommandLineRunner {
 
                     //....
                 } catch (Exception ex) {
-                    LOG.error("Error reading instance configuration file", oneFile, ex.getMessage());
+                    LOG.error("Error reading instance configuration file {} {} {}", lastTag, oneFile, ex.getMessage());
                 }
-                LOG.info("Finished processing configuration file", oneFile);
+                LOG.info("Finished processing configuration file: {}", oneFile);
 
             }
         }
@@ -217,11 +235,14 @@ public class Application implements CommandLineRunner {
             folderPath = ".";
         }
         File folder = new File(folderPath);
-        for (final File fileEntry : folder.listFiles()) {
+        for (File fileEntry : folder.listFiles()) {
             if (!fileEntry.isDirectory()) {
                 String oneFile = fileEntry.getName();
+                if (!oneFile.endsWith(".json")){
+                    continue;
+                }
 
-                LOG.info("Reading instance configuration file from", oneFile);
+                LOG.info("Reading instance configuration file from: {}", oneFile);
 
                 try {
                     byte[] encoded = Files.readAllBytes(Paths.get(folderPath + "/" + oneFile));
@@ -256,13 +277,13 @@ public class Application implements CommandLineRunner {
                     if (prot.isCardNumberCorrect()) {
                         GlobalConfiguration.addProtocol(prot.getID(), prot);
                     } else {
-                        LOG.error("Incorrect number of cards in configuration file", oneFile);
+                        LOG.error("Incorrect number of cards in configuration file: {}", oneFile);
                     }
 
                 } catch (Exception ex) {
-                    LOG.error("Error reading instance configuration file", oneFile, ex.getMessage());
+                    LOG.error("Error reading instance configuration file {}, {}", oneFile, ex.getMessage());
                 }
-                LOG.info("Finished processing configuration file", oneFile);
+                LOG.info("Finished processing configuration file: {}", oneFile);
 
             }
         }
@@ -435,23 +456,23 @@ public class Application implements CommandLineRunner {
                 String protocolFolder = json.getString("protocolfolder");
                 File protFolder = new File(protocolFolder);
                 if (!protFolder.exists()) {
-                    LOG.warn("Creating protocol folder", protFolder.getCanonicalPath());
+                    LOG.warn("Creating protocol folder {}", protFolder.getCanonicalPath());
                     if (!protFolder.mkdirs()) {
-                        LOG.error("Creating protocol folder failed");
+                        LOG.error("Creating protocol folder failed {}");
                         ok = false;
                     }
                 }
                 if (protFolder.exists() && protFolder.isDirectory()) {
                     GlobalConfiguration.setProtocolFolder(protFolder.getCanonicalPath());
                 } else {
-                    LOG.error("Protocol folder not found", protFolder.getCanonicalPath());
+                    LOG.error("Protocol folder not found: {}", protFolder.getCanonicalPath());
                     ok = false;
                 }
                 if (ok) {
                     String instanceFolder = json.getString("instancefolder");
                     File instFolder = new File(instanceFolder);
                     if (!instFolder.exists()) {
-                        LOG.warn("Creating instance folder", instFolder.getCanonicalPath());
+                        LOG.warn("Creating instance folder {}", instFolder.getCanonicalPath());
                         if (!instFolder.mkdirs()) {
                             LOG.error("Creating instance folder failed");
                             ok = false;
@@ -461,7 +482,7 @@ public class Application implements CommandLineRunner {
                     if (instFolder.exists() && instFolder.isDirectory()) {
                         GlobalConfiguration.setInstanceFolder(instFolder.getCanonicalPath());
                     } else {
-                        LOG.error("Instance folder not found", instFolder.getCanonicalPath());
+                        LOG.error("Instance folder not found: {}", instFolder.getCanonicalPath());
                         ok = false;
                     }
                 }
@@ -488,7 +509,7 @@ public class Application implements CommandLineRunner {
                             if (oneReader instanceof String) {
                                 listOfReaders.add((String) oneReader);
                             } else {
-                                LOG.error("Global configuration file - reader name is not a string", oneReader);
+                                LOG.error("Global configuration file - reader name is not a string: {}", oneReader);
                                 ok = false;
                             }
                         }
@@ -500,7 +521,7 @@ public class Application implements CommandLineRunner {
                         String[] pathAndRest = sSmartCardIO.split(":");
                         File fSmartCardIO = new File(pathAndRest[0]);
                         if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
-                            LOG.error("Global configuration file - smartcardio for readers doesn't exist", fSmartCardIO.getCanonicalPath());
+                            LOG.error("Global configuration file - smartcardio for readers doesn't exist: {}", fSmartCardIO.getCanonicalPath());
                             ok = false;
                         }
                     }
@@ -530,7 +551,7 @@ public class Application implements CommandLineRunner {
                                 listOfReaders.add((String) oneReader);
                             } else {
                                 ok = false;
-                                LOG.error("Global configuration file - simona address is not a string", oneReader);
+                                LOG.error("Global configuration file - simona address is not a string: {}", oneReader);
                             }
                         }
                         GlobalConfiguration.setSimonaSet(listOfReaders);
@@ -545,7 +566,7 @@ public class Application implements CommandLineRunner {
                         String[] pathAndRest = sSmartCardIO.split(":");
                         File fSmartCardIO = new File(pathAndRest[0]);
                         if ((!fSmartCardIO.exists()) || (!fSmartCardIO.isFile())) {
-                            LOG.error("Global configuration file - smartcardio for simonas doesn't exist", fSmartCardIO.getCanonicalPath());
+                            LOG.error("Global configuration file - smartcardio for simonas doesn't exist: {}", fSmartCardIO.getCanonicalPath());
                             ok = false;
                         }
                     }
