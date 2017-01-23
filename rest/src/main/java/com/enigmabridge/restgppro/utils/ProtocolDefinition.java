@@ -39,8 +39,12 @@ public class ProtocolDefinition {
 
 
     public ProtocolDefinition() {
-        parties.put("server", 1);
-        parties.put("worker", 0);
+        parties.put("@server", 1);
+        parties.put("@worker", 0);
+        apduData.add("src");
+        apduData.add("dst");
+        apduResult.add("src");
+        apduResult.add("dst");
     }
 
     public void setName(String name) {
@@ -146,7 +150,7 @@ public class ProtocolDefinition {
         Phase phase = new Phase();
         phase.result = phaseResult;
         phase.input = phaseInput;
-        this.phases.put(phaseName, phase);
+        this.phases.put(phaseName.toLowerCase(), phase);
     }
 
     public void addPhaseStep(String phaseName, String apdu, String from, String to, String result) {
@@ -159,7 +163,9 @@ public class ProtocolDefinition {
             step.to = to;
             step.result = result;
 
-            this.phases.get(phaseName).addStep(step);
+            if (this.phases.get(phaseName.toLowerCase()) != null) {
+                this.phases.get(phaseName.toLowerCase()).addStep(step);
+            }
 
         }
     }
@@ -182,9 +188,9 @@ public class ProtocolDefinition {
 
     private class Phase {
 
-        public String result;
-        public LinkedList<String> input;
-        public LinkedList<PhaseStep> steps;
+        public String result = null;
+        public LinkedList<String> input = new LinkedList<>();
+        public LinkedList<PhaseStep> steps = new LinkedList<>();
 
         public void addStep(PhaseStep step) {
             steps.add(step);

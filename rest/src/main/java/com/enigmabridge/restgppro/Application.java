@@ -117,7 +117,7 @@ public class Application implements CommandLineRunner {
         for (final File fileEntry : folder.listFiles()) {
             if (!fileEntry.isDirectory()) {
                 String oneFile = fileEntry.getName();
-                if (!oneFile.endsWith(".json")){
+                if (!oneFile.endsWith(".json")) {
                     continue;
                 }
                 LOG.info("Reading instance configuration file from {}", oneFile);
@@ -138,31 +138,31 @@ public class Application implements CommandLineRunner {
                     }
 
                     JSONArray apdus = json.getJSONArray("apdu");
-                    for (Object apdu:apdus){
-                        if (apdu instanceof JSONObject){
-                            String name = ((JSONObject)apdu).getString("name").toLowerCase();
-                            String cla = ((JSONObject)apdu).getString("cla");
-                            String ins = ((JSONObject)apdu).getString("ins");
-                            String p1 = ((JSONObject)apdu).getString("p1");
-                            String p2= ((JSONObject) apdu).getString("p2");
+                    for (Object apdu : apdus) {
+                        if (apdu instanceof JSONObject) {
+                            String name = ((JSONObject) apdu).getString("name").toLowerCase();
+                            String cla = ((JSONObject) apdu).getString("cla");
+                            String ins = ((JSONObject) apdu).getString("ins");
+                            String p1 = ((JSONObject) apdu).getString("p1");
+                            String p2 = ((JSONObject) apdu).getString("p2");
                             lastTag = name;
                             String data;
-                            if (((JSONObject)apdu).isNull("data")){
+                            if (((JSONObject) apdu).isNull("data")) {
                                 data = null;
                             } else {
                                 data = ((JSONObject) apdu).getString("data");
-                                if (data.startsWith("@")){
-                                    if (!prot.addData(data)){
+                                if (data.startsWith("@")) {
+                                    if (!prot.addData(data)) {
                                         LOG.error("Data in the protocol is not known: {}", data);
                                     }
                                 }
                             }
                             String result;
-                            if (((JSONObject)apdu).isNull("result")){
+                            if (((JSONObject) apdu).isNull("result")) {
                                 result = null;
                             } else {
-                                result =((JSONObject)apdu).getString("result");
-                                if (result.startsWith("@")){
+                                result = ((JSONObject) apdu).getString("result");
+                                if (result.startsWith("@")) {
                                     prot.addResult(result);
                                 } else {
                                     LOG.info("A result of APDU is not a name {} {}", name, result);
@@ -174,31 +174,31 @@ public class Application implements CommandLineRunner {
                     }
 
                     JSONArray phases = json.getJSONArray("phases");
-                    for (Object phase:phases){
-                        if (phase instanceof JSONObject){
-                            String phaseName = ((JSONObject)phase).getString("name");
+                    for (Object phase : phases) {
+                        if (phase instanceof JSONObject) {
+                            String phaseName = ((JSONObject) phase).getString("name");
                             lastTag = phaseName;
-                            String phaseResult = ((JSONObject)phase).getString("result");
-                            JSONArray phaseInput = ((JSONObject)phase).getJSONArray("input");
-                            LinkedList<String>inputs = new LinkedList<>();
-                            for (Object oneInput: phaseInput){
-                                inputs.add((String)oneInput);
+                            String phaseResult = ((JSONObject) phase).getString("result");
+                            JSONArray phaseInput = ((JSONObject) phase).getJSONArray("input");
+                            LinkedList<String> inputs = new LinkedList<>();
+                            for (Object oneInput : phaseInput) {
+                                inputs.add((String) oneInput);
                             }
                             prot.addPhase(phaseName, phaseResult, inputs);
                             LinkedList<String> instructions = new LinkedList<>();
-                            JSONArray jsonInstructions = ((JSONObject)phase).getJSONArray("apdus");
+                            JSONArray jsonInstructions = ((JSONObject) phase).getJSONArray("apdus");
                             boolean problem = false;
-                            for (Object step:jsonInstructions){
-                                String apdu = ((JSONObject)step).getString("apdu");
-                                String from = ((JSONObject)step).getString("from");
-                                String to = ((JSONObject)step).getString("to");
+                            for (Object step : jsonInstructions) {
+                                String apdu = ((JSONObject) step).getString("apdu");
+                                String from = ((JSONObject) step).getString("from");
+                                String to = ((JSONObject) step).getString("to");
                                 String result = null;
-                                if (((JSONObject)step).has("result")){
-                                    result = ((JSONObject)step).getString("result");
+                                if (((JSONObject) step).has("result")) {
+                                    result = ((JSONObject) step).getString("result");
                                 } else {
                                     result = null;
                                 }
-                                if (prot.isParty(from) && prot.isParty(to)){
+                                if (prot.isParty(from) && prot.isParty(to)) {
                                     prot.addPhaseStep(phaseName, apdu, from, to, result);
                                     LOG.debug("New instruction added to phase {} {}", apdu, phaseName);
                                 } else {
@@ -207,7 +207,7 @@ public class Application implements CommandLineRunner {
                                 }
 
                             }
-                            if (problem){
+                            if (problem) {
                                 prot.removePhase(phaseName);
                             }
 
@@ -215,8 +215,6 @@ public class Application implements CommandLineRunner {
                     }
                     json.getString("create");
                     json.getString("destroy");
-
-
 
 
                     //....
@@ -238,7 +236,7 @@ public class Application implements CommandLineRunner {
         for (File fileEntry : folder.listFiles()) {
             if (!fileEntry.isDirectory()) {
                 String oneFile = fileEntry.getName();
-                if (!oneFile.endsWith(".json")){
+                if (!oneFile.endsWith(".json")) {
                     continue;
                 }
 

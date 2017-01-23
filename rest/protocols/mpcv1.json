@@ -9,7 +9,7 @@
         "cla": "B0",  
         "ins": "01",  
         "p1": "@processors",
-        "p2": "@dstcard",
+        "p2": "@dst",
         "data": null,
         "result": null
     },
@@ -27,7 +27,7 @@
         "cla": "B0",  
         "ins": "10",   
         "p1": "@processors",
-        "p2": "@dstcard",
+        "p2": "@dst",
         "data": null,
         "result": null
     },
@@ -44,7 +44,7 @@
         "name":"INS_KEYGEN_STORE_HASH",
         "cla": "B0",  
         "ins": "12",   
-        "p1": "@srccard",
+        "p1": "@src",
         "p2": "00",
         "data": "@hash", 
         "result": null
@@ -53,7 +53,7 @@
         "name":"INS_KEYGEN_STORE_PUBKEY",
         "cla": "B0",  
         "ins": "13",  
-        "p1": "@srccard",
+        "p1": "@src",
         "p2": "00",
         "data": "@pubkey",
         "result": null
@@ -99,7 +99,7 @@
         "cla": "B0",  
         "ins": "70",   
         "p1": "@processors",
-        "p2": "@dstcard",
+        "p2": "@dst",
         "data": null,
         "result": null
     },
@@ -116,7 +116,7 @@
         "name":"INS_SIGN_STORE_HASH",
         "cla": "B0",  
         "ins": "72",   
-        "p1": "@srccard",
+        "p1": "@src",
         "p2": "00",
         "data": "@signhash", 
         "result": null
@@ -125,7 +125,7 @@
         "name":"INS_SIGN_STORE_RI",
         "cla": "B0",  
         "ins": "73",  
-        "p1": "@srccard",
+        "p1": "@src",
         "p2": "00",
         "data": "@signri", 
         "result": null
@@ -151,7 +151,7 @@
     {
         "name":"INS_SIGN",
         "cla": "B0",  
-        "ins": 77,   
+        "ins": "77",   
         "p1": "00",
         "p2": "00",
         "data": "@signplaintext",
