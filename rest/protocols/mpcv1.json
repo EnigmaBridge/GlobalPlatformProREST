@@ -201,18 +201,19 @@
     },
     {
         "name":"decrypt",
+        "input":["ciphertext"],
         "apdus":[
             {
             "apdu":"INS_DECRYPT",
             "from":"@server",
-            "to":"@worker",
-            "result":"@decrypt"
+            "to":"@worker"
             }
        ],
         "result":"@decrypt"
     },
     {
         "name":"sign",
+        "input":["@processors"],
         "apdus":[
             {
             "apdu":"INS_SIGN_INIT",

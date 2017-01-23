@@ -215,6 +215,7 @@ public class Application implements CommandLineRunner {
                     }
                     json.getString("create");
                     json.getString("destroy");
+                    GlobalConfiguration.addProtocol(prot.getName(), prot);
 
 
                     //....
@@ -260,7 +261,11 @@ public class Application implements CommandLineRunner {
                         }
                     }
                     // we are not reading "status" - take it from cards
-                    json.getJSONArray("status");
+                    if (json.has("status")) {
+                        if (!json.isNull("status")){
+                            json.getJSONArray("status");
+                        }
+                    }
 
                     if (!json.isNull("result")) {
                         for (Object member : json.getJSONArray("result")) {
@@ -273,7 +278,7 @@ public class Application implements CommandLineRunner {
                     }
 
                     if (prot.isCardNumberCorrect()) {
-                        GlobalConfiguration.addProtocol(prot.getID(), prot);
+                        GlobalConfiguration.addInstance(prot.getID(), prot);
                     } else {
                         LOG.error("Incorrect number of cards in configuration file: {}", oneFile);
                     }

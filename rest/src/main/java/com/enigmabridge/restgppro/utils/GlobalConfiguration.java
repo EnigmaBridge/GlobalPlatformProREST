@@ -49,7 +49,8 @@ public class GlobalConfiguration {
     private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
     private static ConcurrentHashMap<String, HashMap<String, AppletStatus>> cards = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<String, LinkedList<AppletStatus>> applets = new ConcurrentHashMap<>();
-    private static HashMap<String, ProtocolInstance> protocols = new HashMap<>();
+    private static HashMap<String, ProtocolDefinition> protocols = new HashMap<>();
+    private static HashMap<String, ProtocolInstance> runs = new HashMap<>();
 
 
     public static void setProtocolFolder(String path) {
@@ -243,8 +244,12 @@ public class GlobalConfiguration {
         GlobalConfiguration.instanceFolder = instanceFolder;
     }
 
-    public static void addProtocol(String id, ProtocolInstance prot) {
+    public static void addProtocol(String id, ProtocolDefinition prot) {
         protocols.put(id, prot);
+    }
+
+    public static void addInstance(String id, ProtocolInstance prot) {
+        runs.put(id, prot);
     }
 
     public static boolean isProtocol(String protocol) {
@@ -282,7 +287,7 @@ public class GlobalConfiguration {
 
     private static String getProtocolAID(String protocol) {
         if (isProtocol(protocol)) {
-            return protocols.get(protocol).getID();
+            return protocols.get(protocol).getAID();
         } else {
             return null;
         }

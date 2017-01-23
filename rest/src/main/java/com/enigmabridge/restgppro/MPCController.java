@@ -115,7 +115,7 @@ public class MPCController {
                     prot.addCard(onecard.getAppletID(), onecard.getReader());
                 }
                 // let's store it in a file
-                GlobalConfiguration.addProtocol(protocolInstance, prot);
+                GlobalConfiguration.addInstance(protocolInstance, prot);
                 prot.persist();
                 msgData = new CreateResponseData();
                 msgData.setInstance(protocolInstance);

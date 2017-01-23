@@ -177,6 +177,15 @@ public class ProtocolDefinition {
 
     }
 
+    public String getName() {
+        return name;
+    }
+
+
+    public String getAID() {
+        return AID;
+    }
+
 
     private class PhaseStep {
 
