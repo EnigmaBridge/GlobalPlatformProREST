@@ -22,31 +22,83 @@
 
 package com.enigmabridge.restgppro.response.data;
 
+import com.enigmabridge.restgppro.utils.AppletStatus;
+
+import java.util.LinkedList;
+
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
-public class CreateResponseData implements GeneralResponseData{
+public class CreateResponseData implements GeneralResponseData {
     private String instance;
     private String password;
+    private Details detail;
 
     @Override
     public void setValue(Object value) {
 
     }
 
-    public void setInstance(String instance) {
-        this.instance = instance;
+    public String getInstance() {
+        return this.instance;
     }
 
-    public String getInstance(){
-        return this.instance;
+    public void setInstance(String instance) {
+        this.instance = instance;
     }
 
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public String getKey(){
+    public String getKey() {
         return this.password;
+    }
+
+    public void setDetail(int i, int size, String protocolInstance,
+                          LinkedList<AppletStatus> instanceProcessors) {
+        detail = new Details(i, size, protocolInstance, instanceProcessors);
+
+    }
+
+    public Details getDetail() {
+        return detail;
+    }
+
+
+    public class Details {
+        private int processors = 0;
+        private int allocated = 0;
+        private String protocol;
+        private LinkedList<String> cards;
+
+        public Details(int allocated, int size, String name, LinkedList<AppletStatus> procs) {
+            this.processors = size;
+            this.allocated = allocated;
+            protocol = name;
+
+            if (procs != null) {
+                cards = new LinkedList<>();
+                for (AppletStatus st : procs) {
+                    cards.add(st.getReader());
+                }
+            }
+        }
+
+        public int getSize() {
+            return processors;
+        }
+
+        public int getAllocated() {
+            return allocated;
+        }
+
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public LinkedList<String> getProcessors() {
+            return cards;
+        }
     }
 }

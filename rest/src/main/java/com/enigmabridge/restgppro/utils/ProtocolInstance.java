@@ -28,18 +28,106 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class ProtocolInstance {
+    private HashMap<String, String> parameters = new HashMap<>();
     private String ID;
     private String protocol = null;
-    private HashMap<String, String> cards = new HashMap<>();
+    private HashMap<String, Pair<String, Integer>> cards = new HashMap<>();
     private HashMap<String, String> results = new HashMap<>();
-    private String status;
     private int processors = 0;
+
+    ;
     private String password;
+    private long lastEvent;
+    private InstanceStatus status;
+    private int lastCardID = 0;
+    public ProtocolInstance() {
+        lastEvent = System.currentTimeMillis();
+    }
+
+    public Pair<String, Integer> getCard(String key) {
+        return cards.get(key);
+    }
+
+    public Set<String> getCardKeys() {
+        return cards.keySet();
+    }
+
+    public String ReplacePx(String pX, Integer playerID) {
+        if (pX.startsWith("@")) {
+            if (pX.equalsIgnoreCase("@dst")) {
+                String temp = Integer.toHexString(playerID);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+            } else if (pX.equalsIgnoreCase("@processors")) {
+                String temp = Integer.toHexString(this.processors);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+            } else {
+                String temp = null;
+                for (String oneInput : this.parameters.keySet()) {
+                    if (pX.equalsIgnoreCase(oneInput)) {
+                        if (temp.length() > 2) {
+                            temp = null;
+                        } else {
+                            temp = "00" + this.parameters.get(oneInput);
+                            temp = temp.substring(temp.length() - 2);
+                        }
+                        break;
+                    }
+                }
+                return temp;
+            }
+        } else {
+            // no change
+            return pX;
+        }
+    }
+
+    public String ReplaceData(String data, Integer playerID) {
+        if (data.startsWith("@")) {
+            if (data.equalsIgnoreCase("@dst")) {
+                String temp = Integer.toHexString(playerID);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+            } else if (data.equalsIgnoreCase("@processors")) {
+                String temp = Integer.toHexString(this.processors);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+            } else {
+                String temp = null;
+                for (String oneInput : this.parameters.keySet()) {
+                    if (data.equalsIgnoreCase(oneInput)) {
+                        if ((temp.length() % 2) == 1) {
+                            temp = "0" + temp;
+                        }
+                        break;
+                    }
+                }
+                return temp;
+            }
+        } else {
+            // no change
+            return data;
+        }
+    }
 
     public String getProtocol() {
         return protocol;
@@ -50,7 +138,10 @@ public class ProtocolInstance {
     }
 
     public void addCard(String cardID, String readerName) {
-        this.cards.put(cardID, readerName);
+
+        this.status = InstanceStatus.ALLOCATED;
+        this.cards.put(cardID, new Pair<String, Integer>(readerName, lastCardID));
+        lastCardID += 1;
     }
 
     public void setProcessors(int processors) {
@@ -84,7 +175,7 @@ public class ProtocolInstance {
         if (folderPath == null) {
             folderPath = ".";
         }
-        folderPath += "/" + this.getID()+".json";
+        folderPath += "/" + this.getID() + ".json";
         File newFile = new File(folderPath);
 
         JSONObject json = new JSONObject();
@@ -96,7 +187,8 @@ public class ProtocolInstance {
         for (String key : cards.keySet()) {
             JSONObject onejsoncard = new JSONObject();
             onejsoncard.put("id", key);
-            onejsoncard.put("reader", cards.get(key));
+            onejsoncard.put("reader", cards.get(key).getL());
+            onejsoncard.put("index", cards.get(key).getR());
             jsoncards.put(onejsoncard);
         }
         json.put("cards", jsoncards);
@@ -109,4 +201,8 @@ public class ProtocolInstance {
         }
         return bResult;
     }
+
+    public enum InstanceStatus {ALLOCATED, INITIALIZED, DESTROYED}
+
+
 }

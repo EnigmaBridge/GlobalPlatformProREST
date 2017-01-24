@@ -36,6 +36,8 @@ public class ProtocolDefinition {
     private LinkedList<String> apduResult = new LinkedList<>();
     private HashMap<String, Instruction> apdus = new HashMap<>();
     private HashMap<String, Phase> phases = new HashMap<>();
+    private Instruction initInstruction;
+    private Instruction destroyInstruction;
 
 
     public ProtocolDefinition() {
@@ -186,6 +188,30 @@ public class ProtocolDefinition {
         return AID;
     }
 
+    public Instruction getInitInstruction() {
+        return this.initInstruction;
+    }
+
+    public Instruction getDestroyInstruction() {
+        return this.destroyInstruction;
+    }
+
+    public void setInitInstruction(String initInstruction) {
+        if (initInstruction!=null) {
+            this.initInstruction = apdus.get(initInstruction);
+        } else {
+            this.initInstruction = null;
+        }
+    }
+
+    public void setDestroyInstruction(String destroyInstruction) {
+        if (destroyInstruction!=null) {
+            this.destroyInstruction = apdus.get(destroyInstruction);
+        } else {
+            this.destroyInstruction = null;
+        }
+    }
+
 
     private class PhaseStep {
 
@@ -207,7 +233,7 @@ public class ProtocolDefinition {
         }
     }
 
-    private class Instruction {
+    class Instruction {
 
         String cls;
         String ins;
@@ -215,5 +241,6 @@ public class ProtocolDefinition {
         String p2;
         String data;
         String result;
+
     }
 }

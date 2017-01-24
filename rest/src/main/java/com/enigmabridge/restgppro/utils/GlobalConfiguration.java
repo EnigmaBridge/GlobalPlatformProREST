@@ -25,10 +25,9 @@ package com.enigmabridge.restgppro.utils;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Created by Enigma Bridge Ltd (dan) on 17/01/2017.
- */
 public class GlobalConfiguration {
     private final static byte STATUS_CARDID = 0x40;
     private final static byte STATUS_KEYPAIR = 0x41;
@@ -49,13 +48,9 @@ public class GlobalConfiguration {
     private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
     private static ConcurrentHashMap<String, HashMap<String, AppletStatus>> cards = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<String, LinkedList<AppletStatus>> applets = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, LinkedList<AppletStatus>> appletsReady = new ConcurrentHashMap<>();
     private static HashMap<String, ProtocolDefinition> protocols = new HashMap<>();
     private static HashMap<String, ProtocolInstance> runs = new HashMap<>();
-
-
-    public static void setProtocolFolder(String path) {
-        GlobalConfiguration.protocolFolder = path;
-    }
 
     public static void setReaderUse(boolean readerScanning) {
         GlobalConfiguration.readerUse = readerScanning;
@@ -116,7 +111,12 @@ public class GlobalConfiguration {
         cards.get(reader).put(aid, status);
 
         applets.putIfAbsent(aid, new LinkedList<>());
+        appletsReady.putIfAbsent(aid, new LinkedList<>());
         applets.get(aid).add(status);
+        // keep a separate list of applets ready for allocation
+        if (status.getStatus() == AppletStatus.Status.READY) {
+            appletsReady.get(aid).add(status);
+        }
     }
 
     public static void updateAppletStatus(String reader, String aid, int status) {
@@ -261,20 +261,14 @@ public class GlobalConfiguration {
 
         if (isProtocol(protocol)) {
             String aid = getProtocolAID(protocol);
-            if (applets.containsKey(aid)) {
-                for (AppletStatus one : applets.get(aid)) {
-                    if (one.getStatus() == AppletStatus.Status.READY) {
+            if (appletsReady.containsKey(aid)) {
+                if ((appletsReady.containsKey(aid)) && (appletsReady.get(aid).size() >= size)) {
+                    for (int counter = 0; counter < size; counter++) {
+                        AppletStatus one = appletsReady.get(aid).remove(0);
                         cards.add(one);
                         one.setBusy(instance);
-                        if (cards.size() == size) {
-                            break;
-                        }
                     }
-                }
-                if (cards.size() < size) {
-                    for (AppletStatus one : cards) {
-                        one.setStatusReady();
-                    }
+                } else {
                     cards = null;
                 }
             }
@@ -295,5 +289,83 @@ public class GlobalConfiguration {
 
     public static String getProtocolFolder() {
         return protocolFolder;
+    }
+
+    public static void setProtocolFolder(String path) {
+        GlobalConfiguration.protocolFolder = path;
+    }
+
+    public static int getReadyCardsNumber(String protocolName) {
+        if (isProtocol(protocolName)) {
+            String aid = getProtocolAID(protocolName);
+            if (appletsReady.get(aid) == null) {
+                return -1;
+            } else {
+                return appletsReady.get(aid).size();
+            }
+        } else {
+            return -1;
+        }
+    }
+
+    public static boolean InitializeInstance(ProtocolInstance prot) {
+
+        if (isProtocol(prot.getProtocol())) {
+            // lets first find the instruction
+            ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocol());
+
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
+            // init is always from "host" to all smartcards
+            for (String playerID : prot.getCardKeys()) {
+                Pair<String, Integer> player = prot.getCard(playerID);
+                // let's now create a command
+                String apduString = ins.cls + ins.ins;
+
+                String p1 = prot.ReplacePx(ins.p1, player.getR());
+                if (p1 == null) {
+                    return false;
+                } else {
+                    apduString += p1;
+                }
+                String p2 = prot.ReplacePx(ins.p2, player.getR());
+                if (p2 == null) {
+                    return false;
+                } else {
+                    apduString += p2;
+                }
+                if (ins.data != null) {
+                    String data = prot.ReplaceData(ins.data, player.getR());
+                    String dataLen = Integer.toHexString(data.length() / 2);
+                    if (dataLen.length() == 1) {
+                        dataLen = "0" + dataLen;
+                    }
+                    apduString += dataLen + data;
+                }
+
+                // and now we should call the smartcard
+                a
+                RunnableRunAPDU oneSC = new RunnableRunAPDU(keys, oneInstance);
+                executor.execute(oneSC);
+
+        }
+        executor.shutdown();
+        try {
+            executor.awaitTermination(50, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+        }
+
+
+        } else {
+            return false;
+        }
+
+    }
+
+    private static String ReplacePx(String p1) {
+        return null;
+    }
+
+    private static ProtocolDefinition.Instruction getProtocolInitCommand(String protocolName) {
+        return protocols.get(protocolName).getInitInstruction();
     }
 }

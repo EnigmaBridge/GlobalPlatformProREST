@@ -47,18 +47,18 @@ import java.util.concurrent.atomic.AtomicLong;
 @PreAuthorize("hasAuthority('" + ApiConfig.BUSINESS_ROLE + "')")
 public class MPCController {
     private static final String template = "Hello, %s!";
+    private static final String MPC_PATH = ApiConfig.API_PATH + "/mpc";
     private final AtomicLong counter = new AtomicLong();
-    private static final String MPC_PATH = ApiConfig.API_PATH+"/mpc";
 
-    @RequestMapping(MPC_PATH+"/greeting")
-    public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
+    @RequestMapping(MPC_PATH + "/greeting")
+    public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") String name) {
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
 
-    @RequestMapping(MPC_PATH+"/inventory")
-    public GeneralResponse inventory(HttpServletRequest request){
+    @RequestMapping(MPC_PATH + "/inventory")
+    public GeneralResponse inventory(HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
         String remoteIPAddress = request.getRemoteAddr();
@@ -66,16 +66,16 @@ public class MPCController {
 
         InventoryResponseData data = new InventoryResponseData();
 
-        for (String aid:GlobalConfiguration.getCardAppletsIDs()){
+        for (String aid : GlobalConfiguration.getCardAppletsIDs()) {
             LinkedList<AppletStatus> allApplets = GlobalConfiguration.getAppletInstances(aid);
-                data.addApplets(aid, allApplets);
+            data.addApplets(aid, allApplets);
         }
 
         LinkedList<String> readers = GlobalConfiguration.getReaders();
         data.addReaders(readers);
 
         LinkedList<String> addresses = GlobalConfiguration.getSimonaIPs();
-        for (String ip: addresses) {
+        for (String ip : addresses) {
             LinkedList<String> readers2 = GlobalConfiguration.getSimonaReaders(ip);
             data.addSimonas(readers2);
         }
@@ -84,7 +84,7 @@ public class MPCController {
 
         return msgBack;
     }
-    
+
 
     @RequestMapping(value = MPC_PATH + "/create", method = RequestMethod.POST)
     public GeneralResponse create(@RequestBody String jsonStr, HttpServletRequest request) {
@@ -100,35 +100,54 @@ public class MPCController {
             JSONObject parsedContent = new JSONObject(jsonStr);
             String protocol = parsedContent.getString("protocol");
             int size = parsedContent.getInt("size");
-            if (GlobalConfiguration.isProtocol(protocol)){
+            if (GlobalConfiguration.isProtocol(protocol)) {
                 //let's find some free smartcards
                 String protocolInstance = Long.toString(System.currentTimeMillis());
                 LinkedList<AppletStatus> instanceProcessors = GlobalConfiguration.getFreeSmartcards(protocol, size, protocolInstance);
                 msgData = new CreateResponseData();
-                String password = "password";
-                ProtocolInstance prot = new ProtocolInstance();
-                prot.setID(protocolInstance);
-                prot.setProcessors(size);
-                prot.setProtocol(protocol);
-                prot.setPassword(password);
-                for (AppletStatus onecard: instanceProcessors) {
-                    prot.addCard(onecard.getAppletID(), onecard.getReader());
+                if (instanceProcessors == null) {
+                    int test = GlobalConfiguration.getReadyCardsNumber(protocol);
+                    if (test < 0) {
+                        status = Consts.SW_STAT_UNKNOWN_PROTOCOL;
+                    } else if (test < size) {
+                        status = Consts.SW_STAT_NO_RESOURCES;
+                    } else {
+                        status = Consts.SW_STAT_PROCESSING_ERROR;
+                    }
+                    msgData.setDetail((test < 0) ? 0 : test, size, protocolInstance,
+                            null);
+                } else {
+                    String password = "password";
+                    ProtocolInstance prot = new ProtocolInstance();
+                    prot.setID(protocolInstance);
+                    prot.setProcessors(size);
+                    prot.setProtocol(protocol);
+                    prot.setPassword(password);
+                    for (AppletStatus onecard : instanceProcessors) {
+                        prot.addCard(onecard.getAppletID(), onecard.getReader());
+                    }
+                    // let's store it in a file
+                    GlobalConfiguration.addInstance(protocolInstance, prot);
+                    prot.persist();
+                    // now we will initialize the protocol instance
+                    boolean result = GlobalConfiguration.InitializeInstance(prot);
+
+                    msgData.setInstance(protocolInstance);
+                    msgData.setPassword(password);
+                    msgData.setDetail(size, size, protocolInstance,
+                            instanceProcessors);
+
                 }
-                // let's store it in a file
-                GlobalConfiguration.addInstance(protocolInstance, prot);
-                prot.persist();
-                msgData = new CreateResponseData();
-                msgData.setInstance(protocolInstance);
-                msgData.setPassword(password);
+
             } else {
                 status = Consts.SW_STAT_UNKNOWN_PROTOCOL;
             }
 
-        } catch (Exception ex){
+        } catch (Exception ex) {
             status = Consts.SW_STAT_INPUT_PARSE_FAIL;
 
         } finally {
-            if (msgBack == null){
+            if (msgBack == null) {
                 msgBack = new CreateResponse();
                 status = Consts.SW_STAT_PROCESSING_ERROR;
             }
@@ -153,7 +172,6 @@ public class MPCController {
         JSONObject parsedContent = new JSONObject(jsonStr);
 
 
-
         return msgBack;
     }
 
@@ -165,7 +183,6 @@ public class MPCController {
         GeneralResponse msgBack = null;
 
         JSONObject parsedContent = new JSONObject(jsonStr);
-
 
 
         return msgBack;

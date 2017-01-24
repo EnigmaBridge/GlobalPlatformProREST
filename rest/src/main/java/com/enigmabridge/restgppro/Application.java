@@ -213,10 +213,16 @@ public class Application implements CommandLineRunner {
 
                         }
                     }
-                    json.getString("create");
-                    json.getString("destroy");
-                    GlobalConfiguration.addProtocol(prot.getName(), prot);
+                    String initIns = json.getString("create");
+                    String destroyIns = json.getString("destroy");
+                    prot.setInitInstruction(initIns);
+                    prot.setDestroyInstruction(destroyIns);
 
+                    if ((prot.getInitInstruction() != null) && (prot.getDestroyInstruction() != null)) {
+                        GlobalConfiguration.addProtocol(prot.getName(), prot);
+                    } else {
+                        LOG.error("Protocol doesn't have init ({}) or destroy ({}) instruction", initIns, destroyIns);
+                    }
 
                     //....
                 } catch (Exception ex) {
@@ -262,7 +268,7 @@ public class Application implements CommandLineRunner {
                     }
                     // we are not reading "status" - take it from cards
                     if (json.has("status")) {
-                        if (!json.isNull("status")){
+                        if (!json.isNull("status")) {
                             json.getJSONArray("status");
                         }
                     }
