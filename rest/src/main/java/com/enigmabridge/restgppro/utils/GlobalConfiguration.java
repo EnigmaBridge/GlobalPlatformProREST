@@ -245,7 +245,7 @@ public class GlobalConfiguration {
     }
 
     public static void addProtocol(String id, ProtocolDefinition prot) {
-        protocols.put(id, prot);
+        protocols.put(id.toLowerCase(), prot);
     }
 
     public static void addInstance(String id, ProtocolInstance prot) {
@@ -253,7 +253,7 @@ public class GlobalConfiguration {
     }
 
     public static boolean isProtocol(String protocol) {
-        return (protocols.containsKey(protocol));
+        return (protocols.containsKey(protocol.toLowerCase()));
     }
 
     public static synchronized LinkedList<AppletStatus> getFreeSmartcards(String protocol, int size, String instance) {
@@ -287,7 +287,7 @@ public class GlobalConfiguration {
 
     private static String getProtocolAID(String protocol) {
         if (isProtocol(protocol)) {
-            return protocols.get(protocol).getAID();
+            return protocols.get(protocol.toLowerCase()).getAID();
         } else {
             return null;
         }

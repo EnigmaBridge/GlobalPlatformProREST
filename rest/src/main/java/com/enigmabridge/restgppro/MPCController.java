@@ -157,7 +157,7 @@ public class MPCController {
         return msgBack;
     }
 
-    @RequestMapping(value = MPC_PATH + "/destroy", method = RequestMethod.POST)
+    @RequestMapping(value = MPC_PATH + "/run", method = RequestMethod.POST)
     public GeneralResponse run(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;

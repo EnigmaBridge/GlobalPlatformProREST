@@ -84,7 +84,7 @@ public class ProtocolInstance {
         if (folderPath == null) {
             folderPath = ".";
         }
-        folderPath += "/" + this.getID();
+        folderPath += "/" + this.getID()+".json";
         File newFile = new File(folderPath);
 
         JSONObject json = new JSONObject();
