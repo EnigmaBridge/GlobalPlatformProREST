@@ -37,7 +37,7 @@ public class ProtocolInstance {
     private HashMap<String, String> parameters = new HashMap<>();
     private String ID;
     private String protocol = null;
-    private HashMap<String, Pair<String, Integer>> cards = new HashMap<>();
+    private HashMap<String, Pair<AppletStatus,Integer>> cards = new HashMap<>();
     private HashMap<String, String> results = new HashMap<>();
     private int processors = 0;
 
@@ -46,11 +46,13 @@ public class ProtocolInstance {
     private long lastEvent;
     private InstanceStatus status;
     private int lastCardID = 0;
+    private String AID;
+
     public ProtocolInstance() {
         lastEvent = System.currentTimeMillis();
     }
 
-    public Pair<String, Integer> getCard(String key) {
+    public Pair<AppletStatus, Integer> getCard(String key) {
         return cards.get(key);
     }
 
@@ -137,11 +139,23 @@ public class ProtocolInstance {
         this.protocol = protocol;
     }
 
-    public void addCard(String cardID, String readerName) {
+    public boolean addProcessor(String cardID, String readerName) {
 
         this.status = InstanceStatus.ALLOCATED;
-        this.cards.put(cardID, new Pair<String, Integer>(readerName, lastCardID));
-        lastCardID += 1;
+        //let's find the applet in a given reader
+        HashMap<String, AppletStatus> as = GlobalConfiguration.getCardApplets(readerName);
+
+        if (this.AID == null){
+            this.AID = GlobalConfiguration.getProtocolAID(this.protocol);
+        }
+
+        if ((as!=null)&&(as.containsKey(this.AID))){
+            this.cards.put(cardID, new Pair<AppletStatus, Integer>(as.get(this.AID), lastCardID));
+            lastCardID += 1;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void setProcessors(int processors) {

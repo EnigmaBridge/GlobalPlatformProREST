@@ -24,9 +24,7 @@ package com.enigmabridge.restgppro.utils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class GlobalConfiguration {
     private final static byte STATUS_CARDID = 0x40;
@@ -51,6 +49,7 @@ public class GlobalConfiguration {
     private static ConcurrentHashMap<String, LinkedList<AppletStatus>> appletsReady = new ConcurrentHashMap<>();
     private static HashMap<String, ProtocolDefinition> protocols = new HashMap<>();
     private static HashMap<String, ProtocolInstance> runs = new HashMap<>();
+    private static LinkedList<AppletStatus> appletsError = new LinkedList<>();
 
     public static void setReaderUse(boolean readerScanning) {
         GlobalConfiguration.readerUse = readerScanning;
@@ -107,16 +106,20 @@ public class GlobalConfiguration {
     }
 
     public static synchronized void addApplet(String reader, String aid, AppletStatus status) {
+
+
+        status.setAID(aid);
         cards.putIfAbsent(reader, new HashMap<>());
         cards.get(reader).put(aid, status);
 
         applets.putIfAbsent(aid, new LinkedList<>());
         appletsReady.putIfAbsent(aid, new LinkedList<>());
         applets.get(aid).add(status);
-        // keep a separate list of applets ready for allocation
-        if (status.getStatus() == AppletStatus.Status.READY) {
-            appletsReady.get(aid).add(status);
-        }
+        // keep a separate list of applets ready for allocation -- this will be always false
+        // we first need to check the applet status
+//        if (status.getStatus() == AppletStatus.Status.READY) {
+//            appletsReady.get(aid).add(status);
+//        }
     }
 
     public static void updateAppletStatus(String reader, String aid, int status) {
@@ -224,6 +227,13 @@ public class GlobalConfiguration {
             }
         }
         applet.setStatus(status);
+        if (applet.getStatus() == AppletStatus.Status.READY){
+            appletsReady.get(applet.getAID()).add(applet);
+        } else {
+            if (applet.getStatus() != AppletStatus.Status.BUSY){
+                appletsError.add(applet);
+            }
+        }
         return status;
     }
 
@@ -256,7 +266,7 @@ public class GlobalConfiguration {
         return (protocols.containsKey(protocol.toLowerCase()));
     }
 
-    public static synchronized LinkedList<AppletStatus> getFreeSmartcards(String protocol, int size, String instance) {
+    public static synchronized LinkedList<AppletStatus> getFreeApplets(String protocol, int size, String instance) {
         LinkedList<AppletStatus> cards = new LinkedList<>();
 
         if (isProtocol(protocol)) {
@@ -279,7 +289,7 @@ public class GlobalConfiguration {
         return cards;
     }
 
-    private static String getProtocolAID(String protocol) {
+    static String getProtocolAID(String protocol) {
         if (isProtocol(protocol)) {
             return protocols.get(protocol.toLowerCase()).getAID();
         } else {
@@ -314,10 +324,11 @@ public class GlobalConfiguration {
             // lets first find the instruction
             ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocol());
 
+            BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
             ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
             // init is always from "host" to all smartcards
             for (String playerID : prot.getCardKeys()) {
-                Pair<String, Integer> player = prot.getCard(playerID);
+                Pair<AppletStatus, Integer> player = prot.getCard(playerID);
                 // let's now create a command
                 String apduString = ins.cls + ins.ins;
 
@@ -343,22 +354,22 @@ public class GlobalConfiguration {
                 }
 
                 // and now we should call the smartcard
-                a
-                RunnableRunAPDU oneSC = new RunnableRunAPDU(keys, oneInstance);
+
+                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), apduString);
                 executor.execute(oneSC);
 
-        }
-        executor.shutdown();
-        try {
-            executor.awaitTermination(50, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
-
+            }
+            executor.shutdown();
+            try {
+                executor.awaitTermination(50, TimeUnit.SECONDS);
+                return true;
+            } catch (InterruptedException e) {
+                return false;
+            }
 
         } else {
             return false;
         }
-
     }
 
     private static String ReplacePx(String p1) {

@@ -197,7 +197,9 @@ public class ProtocolDefinition {
     }
 
     public void setInitInstruction(String initInstruction) {
+
         if (initInstruction!=null) {
+            initInstruction = initInstruction.toLowerCase();
             this.initInstruction = apdus.get(initInstruction);
         } else {
             this.initInstruction = null;
@@ -205,7 +207,9 @@ public class ProtocolDefinition {
     }
 
     public void setDestroyInstruction(String destroyInstruction) {
+
         if (destroyInstruction!=null) {
+            destroyInstruction = destroyInstruction.toLowerCase();
             this.destroyInstruction = apdus.get(destroyInstruction);
         } else {
             this.destroyInstruction = null;

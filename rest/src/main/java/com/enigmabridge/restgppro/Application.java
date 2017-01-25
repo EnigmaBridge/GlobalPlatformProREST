@@ -263,7 +263,10 @@ public class Application implements CommandLineRunner {
                         if (member instanceof JSONObject) {
                             String cardID = ((JSONObject) member).getString("id");
                             String readerName = ((JSONObject) member).getString("reader");
-                            prot.addCard(cardID, readerName);
+                            if (!prot.addProcessor(cardID, readerName)){
+                                LOG.error("Error finding a processor for a protocol instance: {} {}",
+                                        readerName, prot.getID());
+                            }
                         }
                     }
                     // we are not reading "status" - take it from cards
@@ -312,7 +315,7 @@ public class Application implements CommandLineRunner {
         }
         executor.shutdown();
         try {
-            executor.awaitTermination(50, TimeUnit.SECONDS);
+            executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
         }
     }

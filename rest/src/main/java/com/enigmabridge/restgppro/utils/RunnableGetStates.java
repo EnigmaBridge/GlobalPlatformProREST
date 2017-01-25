@@ -66,6 +66,7 @@ public class RunnableGetStates implements Runnable {
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
             int counting = -1;
+            boolean resultProcessed = false;
             for (String line : outputLines) {
                 if (counting >= 0) {
                     counting += 1;
@@ -79,9 +80,16 @@ public class RunnableGetStates implements Runnable {
                     line = line.trim();
                     if (line.substring(line.length() - 4).equals("9000")) {
                         GlobalConfiguration.parseAppletStatus(m_status, line);
+                        resultProcessed = true;
+                    } else {
+                        m_status.setStatus(-1);
+                        resultProcessed = true;
                     }
                     counting = -1;
                 }
+            }
+            if (!resultProcessed){
+                m_status.setStatus(-1);
             }
         } catch (Exception e) {
             LOG.error("Exception in GPTool: {}", errout);

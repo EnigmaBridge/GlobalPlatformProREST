@@ -35,6 +35,7 @@ public class AppletStatus {
     private Status status = Status.UNDEF;
     private String command = null;
     private String protocolInstance = null;
+    private String AID;
 
     public void setAppletID(byte[] raw, int counter, int length) {
         this.appletID = new byte[length];
@@ -112,6 +113,14 @@ public class AppletStatus {
 
     public void setStatusReady() {
         status = Status.READY;
+    }
+
+    public String getAID() {
+        return AID;
+    }
+
+    public void setAID(String AID) {
+        this.AID = AID;
     }
 
     public enum Status {UNDEF, ERROR, READY, BUSY}

@@ -103,7 +103,7 @@ public class MPCController {
             if (GlobalConfiguration.isProtocol(protocol)) {
                 //let's find some free smartcards
                 String protocolInstance = Long.toString(System.currentTimeMillis());
-                LinkedList<AppletStatus> instanceProcessors = GlobalConfiguration.getFreeSmartcards(protocol, size, protocolInstance);
+                LinkedList<AppletStatus> instanceProcessors = GlobalConfiguration.getFreeApplets(protocol, size, protocolInstance);
                 msgData = new CreateResponseData();
                 if (instanceProcessors == null) {
                     int test = GlobalConfiguration.getReadyCardsNumber(protocol);
@@ -124,7 +124,7 @@ public class MPCController {
                     prot.setProtocol(protocol);
                     prot.setPassword(password);
                     for (AppletStatus onecard : instanceProcessors) {
-                        prot.addCard(onecard.getAppletID(), onecard.getReader());
+                        prot.addProcessor(onecard.getAppletID(), onecard.getReader());
                     }
                     // let's store it in a file
                     GlobalConfiguration.addInstance(protocolInstance, prot);

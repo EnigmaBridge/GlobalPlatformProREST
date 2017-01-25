@@ -37,14 +37,14 @@ import java.util.List;
  */
 public class RunnableRunAPDU implements Runnable {
     private final String m_apdu;
-    private String m_key;
+    private String m_aid;
     private AppletStatus m_status;
     private String m_result;
     private Long latency;
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
-    public RunnableRunAPDU(String key, AppletStatus status, String apdu) {
-        m_key = key;
+    public RunnableRunAPDU(String aid, AppletStatus status, String apdu) {
+        m_aid = aid;
         m_status = status;
         m_apdu = apdu;
 
@@ -62,7 +62,7 @@ public class RunnableRunAPDU implements Runnable {
     public void run() {
 
         String request = m_status.getCommand() + " -a "
-                + GlobalConfiguration.getSelectCommand(m_key) + " -a "
+                + GlobalConfiguration.getSelectCommand(m_aid) + " -a "
                 + m_apdu;
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
