@@ -25,8 +25,6 @@ package com.enigmabridge.restgppro;
 import com.enigmabridge.restgppro.utils.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -49,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static com.enigmabridge.restgppro.utils.Consts.*;
+import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
 
 @org.springframework.context.annotation.Configuration
 @EnableAsync
@@ -57,7 +56,6 @@ import static com.enigmabridge.restgppro.utils.Consts.*;
 public class Application implements CommandLineRunner {
     private static final String ROUTER_RELOAD_EXECUTOR = "reloadExecutor";
     private static final String SERVER_RESYNC_EXECUTOR = "resyncExecutor";
-    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
     @Autowired
     private ErrorAttributes errorAttributes;
@@ -263,7 +261,8 @@ public class Application implements CommandLineRunner {
                         if (member instanceof JSONObject) {
                             String cardID = ((JSONObject) member).getString("id");
                             String readerName = ((JSONObject) member).getString("reader");
-                            if (!prot.addProcessor(cardID, readerName)){
+                            int index = ((JSONObject) member).getInt("index");
+                            if (!prot.addProcessor(cardID, readerName, index)){
                                 LOG.error("Error finding a processor for a protocol instance: {} {}",
                                         readerName, prot.getID());
                             }

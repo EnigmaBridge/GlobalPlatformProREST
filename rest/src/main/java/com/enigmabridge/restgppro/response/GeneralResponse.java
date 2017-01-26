@@ -46,4 +46,8 @@ public interface GeneralResponse {
 
     void setError(String errorString);
 
+    void setLatency(Long length);
+
+    public long getLatency();
+
 }

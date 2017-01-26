@@ -32,6 +32,7 @@ import com.enigmabridge.restgppro.utils.Consts;
 public class CreateResponse implements GeneralResponse {
     private CreateResponseData data = null;
     private int status = Consts.SW_STAT_OK;
+    private Long latency;
 
     @Override
     public void setResponse(GeneralResponseData data) {
@@ -68,5 +69,15 @@ public class CreateResponse implements GeneralResponse {
     @Override
     public void setError(String errorString) {
 
+    }
+
+    @Override
+    public void setLatency(Long length) {
+        this.latency = length;
+    }
+
+    @Override
+    public long getLatency() {
+        return latency;
     }
 }

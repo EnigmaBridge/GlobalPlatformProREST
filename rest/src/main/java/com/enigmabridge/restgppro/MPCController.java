@@ -23,9 +23,11 @@
 package com.enigmabridge.restgppro;
 
 import com.enigmabridge.restgppro.response.CreateResponse;
+import com.enigmabridge.restgppro.response.DestroyResponse;
 import com.enigmabridge.restgppro.response.GeneralResponse;
 import com.enigmabridge.restgppro.response.InventoryResponse;
 import com.enigmabridge.restgppro.response.data.CreateResponseData;
+import com.enigmabridge.restgppro.response.data.DestroyResponseData;
 import com.enigmabridge.restgppro.response.data.InventoryResponseData;
 import com.enigmabridge.restgppro.rest.JsonEnvelope;
 import com.enigmabridge.restgppro.utils.AppletStatus;
@@ -39,6 +41,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
 
 /**
  * Created by dusanklinec on 20.07.16.
@@ -81,6 +85,8 @@ public class MPCController {
         }
 
         msgBack.setResponse(data);
+        long elapsedTime = System.currentTimeMillis() - timeStart;
+        msgBack.setLatency(elapsedTime);
 
         return msgBack;
     }
@@ -124,7 +130,7 @@ public class MPCController {
                     prot.setProtocol(protocol);
                     prot.setPassword(password);
                     for (AppletStatus onecard : instanceProcessors) {
-                        prot.addProcessor(onecard.getAppletID(), onecard.getReader());
+                        prot.addProcessor(onecard.getAppletID(), onecard.getReader(), -1);
                     }
                     // let's store it in a file
                     GlobalConfiguration.addInstance(protocolInstance, prot);
@@ -155,7 +161,7 @@ public class MPCController {
             msgBack.setStatus(status);
             msgBack.setResponse(msgData);
             long elapsedTime = System.currentTimeMillis() - timeStart;
-            //msgBack.setLatency(elapsedTime);
+            msgBack.setLatency(elapsedTime);
         }
 
         return msgBack;
@@ -167,10 +173,42 @@ public class MPCController {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
         String remoteIPAddress = request.getRemoteAddr();
-        GeneralResponse msgBack = null;
+        DestroyResponse msgBack = null;
+        DestroyResponseData msgData = null;
+        int status = Consts.SW_STAT_OK;
 
-        JSONObject parsedContent = new JSONObject(jsonStr);
+        try {
+            msgBack = new DestroyResponse();
+            JSONObject parsedContent = new JSONObject(jsonStr);
+            String instance = parsedContent.getString("instance");
+            String password = parsedContent.getString("key");
+            ProtocolInstance prot = GlobalConfiguration.isInstance(instance, password);
+            if (prot != null) {
+                boolean result = GlobalConfiguration.DestroyInstance(prot);
+                if (!prot.removeFile()) {
+                    LOG.error("Unsuccessful protocol instance delete: {}", prot.getID());
+                }
+                msgData.setDetail();
 
+            } else {
+                status = Consts.SW_STAT_UNKNOWN_PROTOCOL;
+            }
+
+        } catch (Exception ex) {
+            status = Consts.SW_STAT_INPUT_PARSE_FAIL;
+
+        } finally {
+            if (msgBack == null) {
+                msgBack = new DestroyResponse();
+                status = Consts.SW_STAT_PROCESSING_ERROR;
+            }
+
+            msgBack.setStatus(status);
+            msgBack.setResponse(msgData);
+            long elapsedTime = System.currentTimeMillis() - timeStart;
+            msgBack.setLatency(elapsedTime);
+            //msgBack.setLatency(elapsedTime);
+        }
 
         return msgBack;
     }

@@ -37,7 +37,7 @@ public class ProtocolInstance {
     private HashMap<String, String> parameters = new HashMap<>();
     private String ID;
     private String protocol = null;
-    private HashMap<String, Pair<AppletStatus,Integer>> cards = new HashMap<>();
+    private HashMap<String, Pair<AppletStatus, Integer>> cards = new HashMap<>();
     private HashMap<String, String> results = new HashMap<>();
     private int processors = 0;
 
@@ -139,18 +139,22 @@ public class ProtocolInstance {
         this.protocol = protocol;
     }
 
-    public boolean addProcessor(String cardID, String readerName) {
+    public boolean addProcessor(String cardID, String readerName, int index) {
 
         this.status = InstanceStatus.ALLOCATED;
         //let's find the applet in a given reader
         HashMap<String, AppletStatus> as = GlobalConfiguration.getCardApplets(readerName);
 
-        if (this.AID == null){
+        if (this.AID == null) {
             this.AID = GlobalConfiguration.getProtocolAID(this.protocol);
         }
 
-        if ((as!=null)&&(as.containsKey(this.AID))){
-            this.cards.put(cardID, new Pair<AppletStatus, Integer>(as.get(this.AID), lastCardID));
+        if ((as != null) && (as.containsKey(this.AID))) {
+            if (index >= 0) {
+                this.cards.put(cardID, new Pair<AppletStatus, Integer>(as.get(this.AID), index));
+            } else {
+                this.cards.put(cardID, new Pair<AppletStatus, Integer>(as.get(this.AID), lastCardID));
+            }
             lastCardID += 1;
             return true;
         } else {
@@ -179,10 +183,6 @@ public class ProtocolInstance {
         this.ID = ID;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public boolean persist() {
         boolean bResult = true;
         String folderPath = GlobalConfiguration.getInstanceFolder();
@@ -205,7 +205,7 @@ public class ProtocolInstance {
             onejsoncard.put("index", cards.get(key).getR());
             jsoncards.put(onejsoncard);
         }
-        json.put("cards", jsoncards);
+        json.put("group", jsoncards);
         try {
             PrintWriter out = new PrintWriter(folderPath);
             out.println(json.toString());
@@ -214,6 +214,29 @@ public class ProtocolInstance {
             bResult = false;
         }
         return bResult;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean removeFile() {
+        String folderPath = GlobalConfiguration.getInstanceFolder();
+        if (folderPath == null) {
+            folderPath = ".";
+        }
+        folderPath += "/" + this.getID() + ".json";
+        File newFile = new File(folderPath);
+
+        if (newFile.exists()) {
+            return newFile.delete();
+        } else {
+            return false;
+        }
     }
 
     public enum InstanceStatus {ALLOCATED, INITIALIZED, DESTROYED}

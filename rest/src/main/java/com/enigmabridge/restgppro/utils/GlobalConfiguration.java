@@ -22,11 +22,19 @@
 
 package com.enigmabridge.restgppro.utils;
 
+import com.enigmabridge.restgppro.Application;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.*;
 
 public class GlobalConfiguration {
+
+    public static final Logger LOG = LoggerFactory.getLogger(Application.class);
+
+
     private final static byte STATUS_CARDID = 0x40;
     private final static byte STATUS_KEYPAIR = 0x41;
     private final static byte STATUS_EPHEMERAL = 0x42;
@@ -227,10 +235,10 @@ public class GlobalConfiguration {
             }
         }
         applet.setStatus(status);
-        if (applet.getStatus() == AppletStatus.Status.READY){
+        if (applet.getStatus() == AppletStatus.Status.READY) {
             appletsReady.get(applet.getAID()).add(applet);
         } else {
-            if (applet.getStatus() != AppletStatus.Status.BUSY){
+            if (applet.getStatus() != AppletStatus.Status.BUSY) {
                 appletsError.add(applet);
             }
         }
@@ -378,5 +386,76 @@ public class GlobalConfiguration {
 
     private static ProtocolDefinition.Instruction getProtocolInitCommand(String protocolName) {
         return protocols.get(protocolName).getInitInstruction();
+    }
+
+    public static ProtocolInstance isInstance(String instance, String password) {
+
+        if (runs.containsKey(instance)) {
+            if (password.equals(runs.get(instance).getPassword())) {
+                return runs.get(instance);
+            }
+        }
+        return null;
+    }
+
+    public static boolean DestroyInstance(ProtocolInstance prot) {
+
+        if (prot == null) {
+            return false;
+        }
+        // lets first find the instruction
+        ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolDestroyCommand(prot.getProtocol());
+
+        BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
+        // init is always from "host" to all smartcards
+        for (String playerID : prot.getCardKeys()) {
+            Pair<AppletStatus, Integer> player = prot.getCard(playerID);
+            // let's now create a command
+            String apduString = ins.cls + ins.ins;
+
+            String p1 = prot.ReplacePx(ins.p1, player.getR());
+            if (p1 == null) {
+                return false;
+            } else {
+                apduString += p1;
+            }
+            String p2 = prot.ReplacePx(ins.p2, player.getR());
+            if (p2 == null) {
+                return false;
+            } else {
+                apduString += p2;
+            }
+            if (ins.data != null) {
+                String data = prot.ReplaceData(ins.data, player.getR());
+                String dataLen = Integer.toHexString(data.length() / 2);
+                if (dataLen.length() == 1) {
+                    dataLen = "0" + dataLen;
+                }
+                apduString += dataLen + data;
+            }
+
+            // and now we should call the smartcard
+
+            RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), apduString);
+            executor.execute(oneSC);
+
+        }
+        executor.shutdown();
+        try {
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+            return true;
+        } catch (InterruptedException e) {
+            return false;
+        }
+
+    }
+
+    private static ProtocolDefinition.Instruction getProtocolDestroyCommand(String protocolName) {
+        if (protocols.get(protocolName) != null) {
+            return protocols.get(protocolName).getInitInstruction();
+        } else {
+            return null;
+        }
     }
 }

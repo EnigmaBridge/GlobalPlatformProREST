@@ -22,30 +22,32 @@
 
 package com.enigmabridge.restgppro.response;
 
+import com.enigmabridge.restgppro.response.data.DestroyResponseData;
 import com.enigmabridge.restgppro.response.data.GeneralResponseData;
 import com.enigmabridge.restgppro.utils.Consts;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
-public class InventoryResponse implements GeneralResponse {
-    private GeneralResponseData data = null;
-    private int status =Consts.SW_STAT_OK;
-    private Long latency;
+public class DestroyResponse implements GeneralResponse {
+    private DestroyResponseData data = null;
+    private int status = Consts.SW_STAT_OK;
+    private long latency;
 
     @Override
     public void setResponse(GeneralResponseData data) {
-        this.data = data;
+        this.data = (DestroyResponseData) data;
+
     }
 
     @Override
     public GeneralResponseData getResponse() {
-
         return data;
     }
 
     @Override
     public void setStatus(int status) {
+        this.status = status;
 
     }
 

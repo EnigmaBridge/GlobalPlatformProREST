@@ -39,6 +39,7 @@ public class ClientResponse implements GeneralResponse {
     private int status;
     private GeneralResponseData data = null;
     private String nonce = null;
+    private Long latency;
 
 
     @Override
@@ -77,6 +78,16 @@ public class ClientResponse implements GeneralResponse {
     @Override
     public void setError(String error) {
         this.error = error;
+    }
+
+    @Override
+    public void setLatency(Long length) {
+        this.latency = length;
+    }
+
+    @Override
+    public long getLatency() {
+        return latency;
     }
 
 
