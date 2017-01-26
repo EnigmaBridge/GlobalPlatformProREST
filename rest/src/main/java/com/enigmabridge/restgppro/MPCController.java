@@ -191,7 +191,7 @@ public class MPCController {
                 msgData.setDetail();
 
             } else {
-                status = Consts.SW_STAT_UNKNOWN_PROTOCOL;
+                status = Consts.SW_STAT_UNKNOWN_INSTANCE;
             }
 
         } catch (Exception ex) {

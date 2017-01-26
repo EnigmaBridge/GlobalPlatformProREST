@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static com.enigmabridge.restgppro.utils.AppletStatus.Status.BUSY;
 import static com.enigmabridge.restgppro.utils.Consts.*;
 import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
 
@@ -257,15 +258,27 @@ public class Application implements CommandLineRunner {
                     prot.setProcessors(json.getInt("processors"));
                     prot.setID(json.getString("id"));
                     prot.setProtocol(json.getString("protocol"));
+                    prot.setPassword(json.getString("key"));
                     for (Object member : json.getJSONArray("group")) {
                         if (member instanceof JSONObject) {
                             String cardID = ((JSONObject) member).getString("id");
                             String readerName = ((JSONObject) member).getString("reader");
-                            int index = ((JSONObject) member).getInt("index");
+                            int index = -1;
+                            if (((JSONObject) member).has("index")){
+                                index = ((JSONObject) member).getInt("index");
+                            }
                             if (!prot.addProcessor(cardID, readerName, index)){
                                 LOG.error("Error finding a processor for a protocol instance: {} {}",
                                         readerName, prot.getID());
+                                prot.SetStatus(ProtocolInstance.InstanceStatus.ERROR);
                             }
+                        }
+                    }
+                    if (prot.GetStatus() == ProtocolInstance.InstanceStatus.CREATED){
+                        if (prot.GetCardStatus() == BUSY) {
+                            prot.SetStatus(ProtocolInstance.InstanceStatus.INITIALIZED);
+                        } else {
+                            prot.SetStatus(ProtocolInstance.InstanceStatus.ALLOCATED);
                         }
                     }
                     // we are not reading "status" - take it from cards

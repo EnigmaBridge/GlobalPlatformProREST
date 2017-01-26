@@ -31,8 +31,9 @@ public class Consts {
     public static final int SW_STAT_INPUT_PARSE_FAIL = 0x002;
     public static final int SW_STAT_SYSTEM_ERROR = 0x003;
     public static final int SW_STAT_INVALID_GLOBAL_CONFIG = 0x004;
-    public static final int SW_STAT_READERS_ERROR = 005;
-    public static final int SW_STAT_SIMONAS_ERROR = 006;
-    public static final int SW_STAT_UNKNOWN_PROTOCOL = 007 ;
+    public static final int SW_STAT_READERS_ERROR = 0x005;
+    public static final int SW_STAT_SIMONAS_ERROR = 0x006;
+    public static final int SW_STAT_UNKNOWN_PROTOCOL = 0x007;
     public static final int SW_STAT_NO_RESOURCES = 0x008;
+    public static final int SW_STAT_UNKNOWN_INSTANCE = 0x009;
 }

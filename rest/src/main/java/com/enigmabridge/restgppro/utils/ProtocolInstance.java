@@ -30,6 +30,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Set;
 
+import static com.enigmabridge.restgppro.utils.AppletStatus.Status.READY;
+
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
@@ -49,7 +51,10 @@ public class ProtocolInstance {
     private String AID;
 
     public ProtocolInstance() {
+
         lastEvent = System.currentTimeMillis();
+        this.status = InstanceStatus.CREATED;
+
     }
 
     public Pair<AppletStatus, Integer> getCard(String key) {
@@ -141,7 +146,6 @@ public class ProtocolInstance {
 
     public boolean addProcessor(String cardID, String readerName, int index) {
 
-        this.status = InstanceStatus.ALLOCATED;
         //let's find the applet in a given reader
         HashMap<String, AppletStatus> as = GlobalConfiguration.getCardApplets(readerName);
 
@@ -160,6 +164,16 @@ public class ProtocolInstance {
         } else {
             return false;
         }
+    }
+
+    public AppletStatus.Status GetCardStatus(){
+        AppletStatus.Status temp = AppletStatus.Status.BUSY;
+        for (String index: cards.keySet()){
+            if (cards.get(index).getL().getStatus() == READY){
+                temp = READY;
+            }
+        }
+        return temp;
     }
 
     public void setProcessors(int processors) {
@@ -197,11 +211,12 @@ public class ProtocolInstance {
         json.put("processors", processors);
         json.put("protocol", protocol);
         json.put("result", (Object) null);
+        json.put("key", password);
         JSONArray jsoncards = new JSONArray();
         for (String key : cards.keySet()) {
             JSONObject onejsoncard = new JSONObject();
             onejsoncard.put("id", key);
-            onejsoncard.put("reader", cards.get(key).getL());
+            onejsoncard.put("reader", cards.get(key).getL().getReader());
             onejsoncard.put("index", cards.get(key).getR());
             jsoncards.put(onejsoncard);
         }
@@ -239,7 +254,15 @@ public class ProtocolInstance {
         }
     }
 
-    public enum InstanceStatus {ALLOCATED, INITIALIZED, DESTROYED}
+    public void SetStatus(InstanceStatus status) {
+        this.status = status;
+    }
+
+    public InstanceStatus GetStatus() {
+        return this.status;
+    }
+
+    public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}
 
 
 }
