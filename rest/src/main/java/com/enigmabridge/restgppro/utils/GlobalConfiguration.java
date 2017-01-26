@@ -262,12 +262,12 @@ public class GlobalConfiguration {
         GlobalConfiguration.instanceFolder = instanceFolder;
     }
 
-    public static void addProtocol(String id, ProtocolDefinition prot) {
-        protocols.put(id.toLowerCase(), prot);
+    public static void addProtocol(String protocolName, ProtocolDefinition prot) {
+        protocols.put(protocolName.toLowerCase(), prot);
     }
 
-    public static void addInstance(String id, ProtocolInstance prot) {
-        runs.put(id, prot);
+    public static void addInstance(String uid, ProtocolInstance prot) {
+        runs.put(uid, prot);
     }
 
     public static boolean isProtocol(String protocol) {
@@ -328,9 +328,9 @@ public class GlobalConfiguration {
 
     public static boolean InitializeInstance(ProtocolInstance prot) {
 
-        if (isProtocol(prot.getProtocol())) {
+        if (isProtocol(prot.getProtocolName())) {
             // lets first find the instruction
-            ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocol());
+            ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocolName());
 
             BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
             ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
@@ -362,8 +362,9 @@ public class GlobalConfiguration {
                 }
 
                 // and now we should call the smartcard
-
-                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), apduString);
+                String []apduArray = new String[1];
+                apduArray[0] = apduString;
+                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray);
                 executor.execute(oneSC);
 
             }
@@ -398,6 +399,16 @@ public class GlobalConfiguration {
         return null;
     }
 
+    public static ProtocolInstance isInstance(String instance) {
+
+        if (runs.containsKey(instance)) {
+            return runs.get(instance);
+        }
+        return null;
+    }
+
+
+
     public static boolean DestroyInstance(ProtocolInstance prot) {
 
         LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
@@ -405,7 +416,7 @@ public class GlobalConfiguration {
             return false;
         }
         // lets first find the instruction
-        ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolDestroyCommand(prot.getProtocol());
+        ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolDestroyCommand(prot.getProtocolName());
 
         BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
         ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
@@ -438,7 +449,9 @@ public class GlobalConfiguration {
 
             // and now we should call the smartcard
 
-            RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), apduString);
+            String[] apduArray = new String[1];
+            apduArray[0] = apduString;
+            RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray);
             executor.execute(oneSC);
             apduThreads.add(oneSC);
 
@@ -470,5 +483,34 @@ public class GlobalConfiguration {
         } else {
             return null;
         }
+    }
+
+    public static boolean isPhase(String protocolName, String phase) {
+
+        protocolName = protocolName.toLowerCase();
+        phase = phase.toLowerCase();
+
+        if (protocols.containsKey(protocolName)){
+            if (protocols.get(protocolName).getPhase(phase) != null){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static ProtocolDefinition.Phase getPhase(String protocolName, String phase) {
+        protocolName = protocolName.toLowerCase();
+        phase = phase.toLowerCase();
+
+        ProtocolDefinition.Phase detail = null;
+        if (protocols.containsKey(protocolName)){
+            detail = protocols.get(protocolName).getPhase(phase);
+        }
+        return detail;
+
+    }
+
+    public static ProtocolDefinition getProtocol(String protocol) {
+        return protocols.get(protocol);
     }
 }

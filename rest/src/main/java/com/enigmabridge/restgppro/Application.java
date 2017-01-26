@@ -256,8 +256,9 @@ public class Application implements CommandLineRunner {
                     ProtocolInstance prot = new ProtocolInstance();
 
                     prot.setProcessors(json.getInt("processors"));
-                    prot.setID(json.getString("id"));
-                    prot.setProtocol(json.getString("protocol"));
+                    prot.setUID(json.getString("id"));
+                    ProtocolDefinition def = GlobalConfiguration.getProtocol(json.getString("protocol"));
+                    prot.setProtocol(def);
                     prot.setPassword(json.getString("key"));
                     for (Object member : json.getJSONArray("group")) {
                         if (member instanceof JSONObject) {
@@ -269,7 +270,7 @@ public class Application implements CommandLineRunner {
                             }
                             if (!prot.addProcessor(cardID, readerName, index)){
                                 LOG.error("Error finding a processor for a protocol instance: {} {}",
-                                        readerName, prot.getID());
+                                        readerName, prot.getUID());
                                 prot.SetStatus(ProtocolInstance.InstanceStatus.ERROR);
                             }
                         }
@@ -299,7 +300,7 @@ public class Application implements CommandLineRunner {
                     }
 
                     if (prot.isCardNumberCorrect()) {
-                        GlobalConfiguration.addInstance(prot.getID(), prot);
+                        GlobalConfiguration.addInstance(prot.getUID(), prot);
                     } else {
                         LOG.error("Incorrect number of cards in configuration file: {}", oneFile);
                     }

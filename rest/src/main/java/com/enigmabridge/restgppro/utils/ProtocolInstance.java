@@ -28,17 +28,23 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.enigmabridge.restgppro.utils.AppletStatus.Status.READY;
+import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class ProtocolInstance {
     private HashMap<String, String> parameters = new HashMap<>();
-    private String ID;
-    private String protocol = null;
+    private String UID;
+    private String protocolName = null;
     private HashMap<String, Pair<AppletStatus, Integer>> cards = new HashMap<>();
     private HashMap<String, String> results = new HashMap<>();
     private int processors = 0;
@@ -49,6 +55,7 @@ public class ProtocolInstance {
     private InstanceStatus status;
     private int lastCardID = 0;
     private String AID;
+    private ProtocolDefinition protocol = null;
 
     public ProtocolInstance() {
 
@@ -136,12 +143,14 @@ public class ProtocolInstance {
         }
     }
 
-    public String getProtocol() {
-        return protocol;
+    public String getProtocolName() {
+        return protocolName;
     }
 
-    public void setProtocol(String protocol) {
+    public void setProtocol(ProtocolDefinition protocol) {
+        this.protocolName = protocol.getName();
         this.protocol = protocol;
+
     }
 
     public boolean addProcessor(String cardID, String readerName, int index) {
@@ -150,7 +159,7 @@ public class ProtocolInstance {
         HashMap<String, AppletStatus> as = GlobalConfiguration.getCardApplets(readerName);
 
         if (this.AID == null) {
-            this.AID = GlobalConfiguration.getProtocolAID(this.protocol);
+            this.AID = GlobalConfiguration.getProtocolAID(this.protocolName);
         }
 
         if ((as != null) && (as.containsKey(this.AID))) {
@@ -166,10 +175,10 @@ public class ProtocolInstance {
         }
     }
 
-    public AppletStatus.Status GetCardStatus(){
+    public AppletStatus.Status GetCardStatus() {
         AppletStatus.Status temp = AppletStatus.Status.BUSY;
-        for (String index: cards.keySet()){
-            if (cards.get(index).getL().getStatus() == READY){
+        for (String index : cards.keySet()) {
+            if (cards.get(index).getL().getStatus() == READY) {
                 temp = READY;
             }
         }
@@ -189,12 +198,12 @@ public class ProtocolInstance {
         this.results.put(name, value);
     }
 
-    public String getID() {
-        return ID;
+    public String getUID() {
+        return UID;
     }
 
-    public void setID(String ID) {
-        this.ID = ID;
+    public void setUID(String ID) {
+        this.UID = ID;
     }
 
     public boolean persist() {
@@ -203,13 +212,13 @@ public class ProtocolInstance {
         if (folderPath == null) {
             folderPath = ".";
         }
-        folderPath += "/" + this.getID() + ".json";
+        folderPath += "/" + this.getUID() + ".json";
         File newFile = new File(folderPath);
 
         JSONObject json = new JSONObject();
-        json.put("id", this.ID);
+        json.put("id", this.UID);
         json.put("processors", processors);
-        json.put("protocol", protocol);
+        json.put("protocolName", protocolName);
         json.put("result", (Object) null);
         json.put("key", password);
         JSONArray jsoncards = new JSONArray();
@@ -244,7 +253,7 @@ public class ProtocolInstance {
         if (folderPath == null) {
             folderPath = ".";
         }
-        folderPath += "/" + this.getID() + ".json";
+        folderPath += "/" + this.getUID() + ".json";
         File newFile = new File(folderPath);
 
         if (newFile.exists()) {
@@ -260,6 +269,93 @@ public class ProtocolInstance {
 
     public InstanceStatus GetStatus() {
         return this.status;
+    }
+
+    public HashMap<String, String[]> runPhase(String phase, HashMap<String, String> params, ProtocolDefinition.Phase detail) {
+
+        LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
+
+        HashMap<String, String[]> results = new HashMap<>();
+
+        //let's first check we have all input parameters
+        if (!detail.checkInputs(params)) {
+            LOG.error("Missing entry parameters");
+            return null;
+        }
+
+
+        for (ProtocolDefinition.PhaseStep oneStep : detail.steps) {
+            ProtocolDefinition.Instruction ins = this.protocol.getInstruction(oneStep.apdu);
+
+            BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
+            // init is always from "host" to all smartcards
+            for (String playerID : this.getCardKeys()) {
+                Pair<AppletStatus, Integer> player = this.getCard(playerID);
+
+                String[] apduArray = new String[this.processors];
+                if (oneStep.from.equals("@worker")) {
+                    for (int srcCard = 0; srcCard < this.processors; srcCard++) {
+                        apduArray[srcCard] = CreateAPDU(player, ins, params, results);
+                    }
+                }
+                // and now we should call the smartcard
+                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(),
+                        player.getL(), player.getR(), apduArray);
+                executor.execute(oneSC);
+                apduThreads.add(oneSC);
+
+            }
+            executor.shutdown();
+            try {
+                executor.awaitTermination(20, TimeUnit.SECONDS);
+                for (RunnableRunAPDU value : apduThreads) {
+                    if (value.GetStatus().equals("9000")) {
+                        String apduResponse = value.GetResponse();
+                        if (ins.result.startsWith("@")) {
+                            if (!results.containsKey(ins.result)) {
+                                results.put(ins.result, new String[this.processors]);
+                            }
+                            results.get(ins.result)[value.GetIndex()] = value.GetResponse();
+                        }
+                    } else {
+                        LOG.error("Error executing APDU command {} {}", value.GetStatus(), value.GetApplet().getReader(), value.GetAPDU());
+                    }
+                }
+            } catch (InterruptedException e) {
+                LOG.error("Processing timeout: {}", oneStep.apdu);
+                return null;
+            }
+        }
+        return results;
+    }
+
+    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String> params, HashMap<String, String[]> results) {
+        // let's now create a command
+        String apduString = ins.cls + ins.ins;
+
+        String p1 = this.ReplacePx(ins.p1, player.getR());
+        if (p1 == null) {
+            return null;
+        } else {
+            apduString += p1;
+        }
+        String p2 = this.ReplacePx(ins.p2, player.getR());
+        if (p2 == null) {
+            return null;
+        } else {
+            apduString += p2;
+        }
+        if (ins.data != null) {
+            String data = this.ReplaceData(ins.data, player.getR());
+            String dataLen = Integer.toHexString(data.length() / 2);
+            if (dataLen.length() == 1) {
+                dataLen = "0" + dataLen;
+            }
+            apduString += dataLen + data;
+        }
+
+        return apduString;
     }
 
     public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}

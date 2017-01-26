@@ -49,14 +49,6 @@ public class ProtocolDefinition {
         apduResult.add("dst");
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setAID(String AID) {
-        this.AID = AID.toUpperCase();
-    }
-
     public boolean isParty(String namein) {
         return (parties.containsKey(namein.toLowerCase()));
     }
@@ -82,7 +74,6 @@ public class ProtocolDefinition {
         }
 
     }
-
 
     public LinkedList<String> isDataConsistent() {
 
@@ -183,22 +174,25 @@ public class ProtocolDefinition {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getAID() {
         return AID;
+    }
+
+    public void setAID(String AID) {
+        this.AID = AID.toUpperCase();
     }
 
     public Instruction getInitInstruction() {
         return this.initInstruction;
     }
 
-    public Instruction getDestroyInstruction() {
-        return this.destroyInstruction;
-    }
-
     public void setInitInstruction(String initInstruction) {
 
-        if (initInstruction!=null) {
+        if (initInstruction != null) {
             initInstruction = initInstruction.toLowerCase();
             this.initInstruction = apdus.get(initInstruction);
         } else {
@@ -206,9 +200,13 @@ public class ProtocolDefinition {
         }
     }
 
+    public Instruction getDestroyInstruction() {
+        return this.destroyInstruction;
+    }
+
     public void setDestroyInstruction(String destroyInstruction) {
 
-        if (destroyInstruction!=null) {
+        if (destroyInstruction != null) {
             destroyInstruction = destroyInstruction.toLowerCase();
             this.destroyInstruction = apdus.get(destroyInstruction);
         } else {
@@ -216,8 +214,16 @@ public class ProtocolDefinition {
         }
     }
 
+    public Phase getPhase(String phase) {
+        return this.phases.get(phase);
+    }
 
-    private class PhaseStep {
+    public Instruction getInstruction(String apdu) {
+        return apdus.get(apdu.toLowerCase());
+    }
+
+
+    class PhaseStep {
 
         public String apdu;
         public String from;
@@ -225,7 +231,7 @@ public class ProtocolDefinition {
         public String result;
     }
 
-    private class Phase {
+    public class Phase {
 
         public String result = null;
         public LinkedList<String> input = new LinkedList<>();
@@ -234,6 +240,17 @@ public class ProtocolDefinition {
         public void addStep(PhaseStep step) {
             steps.add(step);
 
+        }
+
+        public boolean checkInputs(HashMap<String, String> params) {
+
+            boolean result = true;
+            for (String x : input) {
+                if (!params.containsKey(x)) {
+                    result = false;
+                }
+            }
+            return result;
         }
     }
 

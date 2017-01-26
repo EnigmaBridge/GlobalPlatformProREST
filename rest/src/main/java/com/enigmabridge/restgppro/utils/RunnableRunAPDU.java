@@ -36,37 +36,51 @@ import java.util.List;
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class RunnableRunAPDU implements Runnable {
-    private final String m_apdu;
+    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
+    private final String[] m_apdu;
+    private final Integer m_index;
     private String m_aid;
     private AppletStatus m_applet;
     private String m_result;
     private Long latency;
-    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
-    public RunnableRunAPDU(String aid, AppletStatus status, String apdu) {
+    public RunnableRunAPDU(String aid, AppletStatus status, Integer index, String[] apdu) {
         m_aid = aid;
         m_applet = status;
         m_apdu = apdu;
+        m_index = index;
 
     }
 
-    public String GetResult(){
-        return m_result;
+    public int GetIndex(){
+        return m_index;
     }
 
-    public String GetStatus(){
-        if (m_result.length()<4){
+    public String GetAPDU() {
+        return m_apdu[0];
+    }
+
+    public String GetResponse() {
+        if (m_result.length() <= 4) {
             return null;
         } else {
-            return m_result.substring(m_result.length()-4);
+            return m_result.substring(0, m_result.length() - 4);
         }
     }
 
-    public AppletStatus GetApplet(){
+    public String GetStatus() {
+        if (m_result.length() < 4) {
+            return null;
+        } else {
+            return m_result.substring(m_result.length() - 4);
+        }
+    }
+
+    public AppletStatus GetApplet() {
         return m_applet;
     }
 
-    public Long GetLatency(){
+    public Long GetLatency() {
         return latency;
     }
 
@@ -74,8 +88,10 @@ public class RunnableRunAPDU implements Runnable {
     public void run() {
 
         String request = m_applet.getCommand() + " -a "
-                + GlobalConfiguration.getSelectCommand(m_aid) + " -a "
-                + m_apdu;
+                + GlobalConfiguration.getSelectCommand(m_aid);
+        for (String currentAPDU: m_apdu) {
+            request = request + " -a " + currentAPDU;
+        }
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream errout = new ByteArrayOutputStream();
