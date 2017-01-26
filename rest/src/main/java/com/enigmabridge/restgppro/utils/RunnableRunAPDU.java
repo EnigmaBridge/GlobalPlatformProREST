@@ -38,20 +38,32 @@ import java.util.List;
 public class RunnableRunAPDU implements Runnable {
     private final String m_apdu;
     private String m_aid;
-    private AppletStatus m_status;
+    private AppletStatus m_applet;
     private String m_result;
     private Long latency;
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
     public RunnableRunAPDU(String aid, AppletStatus status, String apdu) {
         m_aid = aid;
-        m_status = status;
+        m_applet = status;
         m_apdu = apdu;
 
     }
 
     public String GetResult(){
         return m_result;
+    }
+
+    public String GetStatus(){
+        if (m_result.length()<4){
+            return null;
+        } else {
+            return m_result.substring(m_result.length()-4);
+        }
+    }
+
+    public AppletStatus GetApplet(){
+        return m_applet;
     }
 
     public Long GetLatency(){
@@ -61,7 +73,7 @@ public class RunnableRunAPDU implements Runnable {
     @Override
     public void run() {
 
-        String request = m_status.getCommand() + " -a "
+        String request = m_applet.getCommand() + " -a "
                 + GlobalConfiguration.getSelectCommand(m_aid) + " -a "
                 + m_apdu;
 

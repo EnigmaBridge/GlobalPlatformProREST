@@ -96,7 +96,7 @@ public class MPCController {
     public GeneralResponse create(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
-        String remoteIPAddress = request.getRemoteAddr();
+            String remoteIPAddress = request.getRemoteAddr();
         CreateResponse msgBack = null;
         CreateResponseData msgData = null;
         int status = Consts.SW_STAT_OK;
@@ -188,6 +188,7 @@ public class MPCController {
                 if (!prot.removeFile()) {
                     LOG.error("Unsuccessful protocol instance delete: {}", prot.getID());
                 }
+                msgData = new DestroyResponseData(instance);
                 msgData.setDetail();
 
             } else {

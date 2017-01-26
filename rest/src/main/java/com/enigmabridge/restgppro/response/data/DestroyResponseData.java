@@ -34,6 +34,10 @@ public class DestroyResponseData implements GeneralResponseData {
     private String password;
     private Details detail;
 
+    public DestroyResponseData(String instance) {
+        this.instance = instance;
+    }
+
     @Override
     public void setValue(Object value) {
 
@@ -45,14 +49,6 @@ public class DestroyResponseData implements GeneralResponseData {
 
     public void setInstance(String instance) {
         this.instance = instance;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getKey() {
-        return this.password;
     }
 
     public void setDetail() {

@@ -400,6 +400,7 @@ public class GlobalConfiguration {
 
     public static boolean DestroyInstance(ProtocolInstance prot) {
 
+        LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
         if (prot == null) {
             return false;
         }
@@ -439,11 +440,19 @@ public class GlobalConfiguration {
 
             RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), apduString);
             executor.execute(oneSC);
+            apduThreads.add(oneSC);
 
         }
         executor.shutdown();
         try {
-            executor.awaitTermination(10, TimeUnit.SECONDS);
+            executor.awaitTermination(20, TimeUnit.SECONDS);
+            for (RunnableRunAPDU value : apduThreads) {
+                if (value.GetStatus().equals("9000")) {
+                    AppletStatus player = value.GetApplet();
+                    player.setStatus(1);
+                    GlobalConfiguration.SetAppletReady(player);
+                }
+            }
             return true;
         } catch (InterruptedException e) {
             return false;
@@ -451,9 +460,13 @@ public class GlobalConfiguration {
 
     }
 
+    private static void SetAppletReady(AppletStatus player) {
+        appletsReady.get(player.getAID()).add(player);
+    }
+
     private static ProtocolDefinition.Instruction getProtocolDestroyCommand(String protocolName) {
         if (protocols.get(protocolName) != null) {
-            return protocols.get(protocolName).getInitInstruction();
+            return protocols.get(protocolName).getDestroyInstruction();
         } else {
             return null;
         }

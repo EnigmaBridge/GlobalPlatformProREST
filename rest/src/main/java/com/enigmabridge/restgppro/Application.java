@@ -327,7 +327,7 @@ public class Application implements CommandLineRunner {
         }
         executor.shutdown();
         try {
-            executor.awaitTermination(10, TimeUnit.SECONDS);
+            executor.awaitTermination(20, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
         }
     }
