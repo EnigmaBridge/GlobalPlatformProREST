@@ -23,10 +23,7 @@
 package com.enigmabridge.restgppro;
 
 import com.enigmabridge.restgppro.response.*;
-import com.enigmabridge.restgppro.response.data.CreateResponseData;
-import com.enigmabridge.restgppro.response.data.DestroyResponseData;
-import com.enigmabridge.restgppro.response.data.InventoryResponseData;
-import com.enigmabridge.restgppro.response.data.RunResponseData;
+import com.enigmabridge.restgppro.response.data.*;
 import com.enigmabridge.restgppro.rest.JsonEnvelope;
 import com.enigmabridge.restgppro.utils.*;
 import org.json.JSONArray;
@@ -280,10 +277,20 @@ public class MPCController {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
         String remoteIPAddress = request.getRemoteAddr();
+        InstanceResponseData ird;
         GeneralResponse msgBack = null;
 
         JSONObject parsedContent = new JSONObject(jsonStr);
 
+        HashMap<String, ProtocolInstance> runs = GlobalConfiguration.GetInstances();
+
+        msgBack = new InstanceResponse();
+        ird = new InstanceResponseData();
+        for (String name: runs.keySet()){
+            ird.addInstance(name, runs.get(name));
+        }
+
+        msgBack.setResponse(ird);
 
         return msgBack;
     }

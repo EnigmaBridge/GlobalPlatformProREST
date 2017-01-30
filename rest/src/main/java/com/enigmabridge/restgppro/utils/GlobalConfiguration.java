@@ -513,4 +513,9 @@ public class GlobalConfiguration {
     public static ProtocolDefinition getProtocol(String protocol) {
         return protocols.get(protocol);
     }
+
+    public static HashMap<String, ProtocolInstance> GetInstances() {
+
+        return runs;
+    }
 }

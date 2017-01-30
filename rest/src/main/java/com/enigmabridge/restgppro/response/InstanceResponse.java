@@ -23,22 +23,29 @@
 package com.enigmabridge.restgppro.response;
 
 import com.enigmabridge.restgppro.response.data.GeneralResponseData;
-import com.enigmabridge.restgppro.response.data.InventoryResponseData;
-import com.enigmabridge.restgppro.utils.Consts;
+import com.enigmabridge.restgppro.response.data.InstanceResponseData;
+import com.enigmabridge.restgppro.utils.CommonFnc;
 
 /**
- * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
+ * Created by Enigma Bridge Ltd (dan) on 13/01/2017.
  */
-public class InventoryResponse implements GeneralResponse {
-    private InventoryResponseData data = null;
-    private int status =Consts.SW_STAT_OK;
+public class InstanceResponse implements GeneralResponse {
+    /**
+     * Result of the operation.
+     * Might be JSONObject or another serializable object
+     */
+
+    private int version;
+    private String error = null;
+    private int status;
+    private InstanceResponseData data = null;
+    private String nonce = null;
     private Long latency;
-    private String nonce;
+
 
     @Override
     public void setResponse(GeneralResponseData data) {
-
-        this.data = (InventoryResponseData) data;
+        this.data = (InstanceResponseData)data;
     }
 
     @Override
@@ -50,6 +57,7 @@ public class InventoryResponse implements GeneralResponse {
     @Override
     public void setStatus(int status) {
         this.status = status;
+        this.error = CommonFnc.getStatusName(status);
     }
 
     @Override
@@ -57,9 +65,10 @@ public class InventoryResponse implements GeneralResponse {
         return status;
     }
 
-    @Override
-    public void setVersion(int version) {
 
+    @Override
+    public void setVersion(int ver) {
+        this.version = ver;
     }
 
     @Override
@@ -68,8 +77,8 @@ public class InventoryResponse implements GeneralResponse {
     }
 
     @Override
-    public void setError(String errorString) {
-
+    public void setError(String error) {
+        this.error = error;
     }
 
     @Override
@@ -81,4 +90,23 @@ public class InventoryResponse implements GeneralResponse {
     public long getLatency() {
         return latency;
     }
+
+
+    public int getVersion() {
+        return version;
+    }
+
+
+    public String getError() {
+        return error;
+    }
+
+    public long getTimestamp() {
+        return System.currentTimeMillis();
+    }
+
+    public String getNonce() {
+        return this.nonce;
+    }
+
 }
