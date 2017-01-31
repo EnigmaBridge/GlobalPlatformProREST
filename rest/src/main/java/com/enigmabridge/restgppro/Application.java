@@ -36,10 +36,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import pro.javacard.gp.GPArgumentTokenizer;
 import pro.javacard.gp.GPTool;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -265,21 +262,35 @@ public class Application implements CommandLineRunner {
                             String cardID = ((JSONObject) member).getString("id");
                             String readerName = ((JSONObject) member).getString("reader");
                             int index = -1;
-                            if (((JSONObject) member).has("index")){
+                            if (((JSONObject) member).has("index")) {
                                 index = ((JSONObject) member).getInt("index");
                             }
-                            if (!prot.addProcessor(cardID, readerName, index)){
+                            if (!prot.addProcessor(cardID, readerName, index)) {
                                 LOG.error("Error finding a processor for a protocol instance: {} {}",
                                         readerName, prot.getUID());
+                                ((JSONObject) member).put("cardstatus", "reset");
                                 prot.SetStatus(ProtocolInstance.InstanceStatus.ERROR);
                             }
                         }
                     }
-                    if (prot.GetStatus() == ProtocolInstance.InstanceStatus.CREATED){
+                    if (prot.GetStatus() == ProtocolInstance.InstanceStatus.CREATED) {
                         if (prot.GetCardStatus() == BUSY) {
                             prot.SetStatus(ProtocolInstance.InstanceStatus.INITIALIZED);
                         } else {
                             prot.SetStatus(ProtocolInstance.InstanceStatus.ALLOCATED);
+                        }
+                    } else {
+                        PrintWriter out = new PrintWriter(folderPath + "/" + oneFile);
+                        out.println(json.toString());
+                        out.close();
+
+                        LOG.error("Error initializing instance {}", oneFile);
+                        File oldFile = new File(folderPath + "/" + oneFile);
+                        File newFile = new File(folderPath + "/" + oneFile + "_");
+                        if (oldFile.renameTo(newFile)) {
+                            LOG.error("Success - renaming instance configuration file {}", folderPath + "/" + oneFile);
+                        } else {
+                            LOG.error("Error - renaming instance configuration file {}", folderPath + "/" + oneFile);
                         }
                     }
                     // we are not reading "status" - take it from cards
@@ -307,6 +318,14 @@ public class Application implements CommandLineRunner {
 
                 } catch (Exception ex) {
                     LOG.error("Error reading instance configuration file {}, {}", oneFile, ex.getMessage());
+                    File oldFile = new File(folderPath + "/" + oneFile);
+                    File newFile = new File(folderPath + "/" + oneFile + "_");
+
+                    if (oldFile.renameTo(newFile)) {
+                        LOG.error("Success - renaming instance configuration file {}", folderPath + "/" + oneFile);
+                    } else {
+                        LOG.error("Error - renaming instance configuration file {}", folderPath + "/" + oneFile);
+                    }
                 }
                 LOG.info("Finished processing configuration file: {}", oneFile);
 

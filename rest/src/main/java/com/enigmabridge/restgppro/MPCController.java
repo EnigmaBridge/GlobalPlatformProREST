@@ -128,14 +128,19 @@ public class MPCController {
                     }
                     // let's store it in a file
                     GlobalConfiguration.addInstance(protocolInstanceUID, prot);
-                    prot.persist();
                     // now we will initialize the protocol instance
                     boolean result = GlobalConfiguration.InitializeInstance(prot);
+                    if (result) {
+                        prot.persist();
+                        msgData.setInstance(protocolInstanceUID);
+                        msgData.setPassword(password);
+                        msgData.setDetail(size, size, protocolInstanceUID,
+                                instanceProcessors);
+                    } else {
+                        msgData = null;
+                        status = Consts.SW_STAT_SETUP_FAILED;
+                    }
 
-                    msgData.setInstance(protocolInstanceUID);
-                    msgData.setPassword(password);
-                    msgData.setDetail(size, size, protocolInstanceUID,
-                            instanceProcessors);
 
                 }
 
@@ -274,7 +279,7 @@ public class MPCController {
 
     @RequestMapping(value = MPC_PATH + "/instances", method = RequestMethod.POST)
     public GeneralResponse instances(@RequestBody String jsonStr, HttpServletRequest request) {
-        long timeStart = System.currentTimeMillis();
+        long timeStart = -System.currentTimeMillis();
         JsonEnvelope message = null;
         String remoteIPAddress = request.getRemoteAddr();
         InstanceResponseData ird;
@@ -291,6 +296,8 @@ public class MPCController {
         }
 
         msgBack.setResponse(ird);
+        timeStart += System.currentTimeMillis();
+        msgBack.setLatency(timeStart);
 
         return msgBack;
     }

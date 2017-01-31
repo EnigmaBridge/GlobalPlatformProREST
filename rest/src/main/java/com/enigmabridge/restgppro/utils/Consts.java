@@ -36,4 +36,5 @@ public class Consts {
     public static final int SW_STAT_UNKNOWN_PROTOCOL = 0x007;
     public static final int SW_STAT_NO_RESOURCES = 0x008;
     public static final int SW_STAT_UNKNOWN_INSTANCE = 0x009;
+    public static final int SW_STAT_SETUP_FAILED = 0x00a;
 }

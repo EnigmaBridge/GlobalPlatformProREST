@@ -144,7 +144,7 @@ public class ProtocolInstance {
     }
 
     public String getProtocolName() {
-        return protocolName;
+        return protocolName.toLowerCase();
     }
 
     public void setProtocol(ProtocolDefinition protocol) {
@@ -218,7 +218,7 @@ public class ProtocolInstance {
         JSONObject json = new JSONObject();
         json.put("id", this.UID);
         json.put("processors", processors);
-        json.put("protocolName", protocolName);
+        json.put("protocol", protocolName);
         json.put("result", (Object) null);
         json.put("key", password);
         JSONArray jsoncards = new JSONArray();

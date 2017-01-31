@@ -171,7 +171,7 @@ public class ProtocolDefinition {
     }
 
     public String getName() {
-        return name;
+        return name.toLowerCase();
     }
 
     public void setName(String name) {
