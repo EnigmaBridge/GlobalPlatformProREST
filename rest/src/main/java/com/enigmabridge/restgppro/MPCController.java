@@ -240,8 +240,18 @@ public class MPCController {
                     LOG.error("Input parameters not valid: {}", oneParam);
                 }
             }
+
+
             ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
-            if (!GlobalConfiguration.isProtocol(protocolName) || (prot == null)){
+            if (prot != null) {
+                String name = "@processors";
+                String value = Integer.toHexString(prot.getCardKeys().size());
+                if ((value.length() % 2) == 1) {
+                    value = "0" + value;
+                }
+                params.put(name, value);
+            }
+            if (!GlobalConfiguration.isProtocol(protocolName) || (prot == null)) {
                 msgBack.setError("Protocol not known");
                 status = Consts.SW_STAT_UNKNOWN_INSTANCE;
             } else if (!GlobalConfiguration.isPhase(protocolName, phase)) {
@@ -249,15 +259,15 @@ public class MPCController {
                 status = Consts.SW_STAT_UNKNOWN_PHASE;
             } else {
                 ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
-                prot.runPhase(phase, params, detail);
+                HashMap<String, String[]> result = prot.runPhase(phase, params, detail);
 
-                boolean result = GlobalConfiguration.DestroyInstance(prot);
-                if (!prot.removeFile()) {
-                    LOG.error("Unsuccessful protocol instance delete: {}", prot.getUID());
+                if (result == null) {
+                    msgBack.setError("Protocol phase not known");
+                    status = Consts.SW_STAT_UNKNOWN_PHASE;
+                } else {
+                    msgData = new RunResponseData();
+                    msgData.setDetail(0, 0, null, null);
                 }
-                msgData = new RunResponseData();
-                msgData.setDetail(0, 0, null, null);
-
             }
 
 
@@ -296,7 +306,7 @@ public class MPCController {
 
         msgBack = new InstanceResponse();
         ird = new InstanceResponseData();
-        for (String name: runs.keySet()){
+        for (String name : runs.keySet()) {
             ird.addInstance(name, runs.get(name));
         }
 
