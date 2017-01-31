@@ -37,4 +37,5 @@ public class Consts {
     public static final int SW_STAT_NO_RESOURCES = 0x008;
     public static final int SW_STAT_UNKNOWN_INSTANCE = 0x009;
     public static final int SW_STAT_SETUP_FAILED = 0x00a;
+    public static final int SW_STAT_UNKNOWN_PHASE = 0x00b;
 }

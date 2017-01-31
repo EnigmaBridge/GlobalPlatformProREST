@@ -241,7 +241,13 @@ public class MPCController {
                 }
             }
             ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
-            if (GlobalConfiguration.isProtocol(protocolName) && (prot != null) && GlobalConfiguration.isPhase(protocolName, phase)) {
+            if (!GlobalConfiguration.isProtocol(protocolName) || (prot == null)){
+                msgBack.setError("Protocol not known");
+                status = Consts.SW_STAT_UNKNOWN_INSTANCE;
+            } else if (!GlobalConfiguration.isPhase(protocolName, phase)) {
+                msgBack.setError("Protocol phase not known");
+                status = Consts.SW_STAT_UNKNOWN_PHASE;
+            } else {
                 ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
                 prot.runPhase(phase, params, detail);
 
@@ -252,13 +258,12 @@ public class MPCController {
                 msgData = new RunResponseData();
                 msgData.setDetail(0, 0, null, null);
 
-            } else {
-                status = Consts.SW_STAT_UNKNOWN_INSTANCE;
             }
 
 
         } catch (Exception ex) {
             status = Consts.SW_STAT_INPUT_PARSE_FAIL;
+            msgBack.setError(ex.getMessage());
 
         } finally {
             if (msgBack == null) {

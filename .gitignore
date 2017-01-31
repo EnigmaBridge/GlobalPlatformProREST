@@ -10,3 +10,4 @@ classes
 *.jks
 *.yml
 logback.xml
+rest/instances

@@ -33,6 +33,7 @@ public class RunResponse implements GeneralResponse {
     private RunResponseData data = null;
     private int status = Consts.SW_STAT_OK;
     private Long latency;
+    private String error;
 
     @Override
     public void setResponse(GeneralResponseData data) {
@@ -68,7 +69,11 @@ public class RunResponse implements GeneralResponse {
 
     @Override
     public void setError(String errorString) {
+        this.error = errorString;
+    }
 
+    public String getError(){
+        return this.error;
     }
 
     @Override
