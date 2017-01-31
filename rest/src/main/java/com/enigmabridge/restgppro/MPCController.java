@@ -228,19 +228,20 @@ public class MPCController {
             String instance = parsedContent.getString("instance");
             String phase = parsedContent.getString("phase");
             String protocolName = parsedContent.getString("protocol");
-            JSONArray parameters = parsedContent.getJSONArray("input");
             HashMap<String, String> params = new HashMap<>();
-            for (Object oneParam : parameters) {
-                if (oneParam instanceof JSONObject) {
-                    JSONObject oneParamJSON = (JSONObject) oneParam;
-                    String name = "@" + oneParamJSON.getString("name");
-                    String value = oneParamJSON.getString("value");
-                    params.put(name, value);
-                } else {
-                    LOG.error("Input parameters not valid: {}", oneParam);
+            if (!parsedContent.isNull("input")) {
+                JSONArray parameters = parsedContent.getJSONArray("input");
+                for (Object oneParam : parameters) {
+                    if (oneParam instanceof JSONObject) {
+                        JSONObject oneParamJSON = (JSONObject) oneParam;
+                        String name = "@" + oneParamJSON.getString("name");
+                        String value = oneParamJSON.getString("value");
+                        params.put(name, value);
+                    } else {
+                        LOG.error("Input parameters not valid: {}", oneParam);
+                    }
                 }
             }
-
 
             ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
             if (prot != null) {

@@ -72,7 +72,7 @@ public class ProtocolInstance {
         return cards.keySet();
     }
 
-    public String ReplacePx(String pX, Integer playerID) {
+    public String ReplacePx(String pX, Integer playerID, HashMap<String, String[]> results, int srcCard) {
         if (pX.startsWith("@")) {
             if (pX.equalsIgnoreCase("@dst")) {
                 String temp = Integer.toHexString(playerID);
@@ -88,17 +88,40 @@ public class ProtocolInstance {
                 }
                 temp = temp.substring(0, 2);
                 return temp;
+            } else if (pX.equalsIgnoreCase("@src")) {
+                String temp = Integer.toHexString(srcCard);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+
             } else {
                 String temp = null;
                 for (String oneInput : this.parameters.keySet()) {
                     if (pX.equalsIgnoreCase(oneInput)) {
+                        temp = this.parameters.get(oneInput);
                         if (temp.length() > 2) {
                             temp = null;
                         } else {
-                            temp = "00" + this.parameters.get(oneInput);
+                            temp = "00" + temp;
                             temp = temp.substring(temp.length() - 2);
                         }
                         break;
+                    }
+                }
+                if (temp == null) {
+                    for (String oneInput : results.keySet()) {
+                        if (pX.equalsIgnoreCase(oneInput)) {
+                            if (results.get(oneInput).length > 1) {
+                                temp = "00" + results.get(oneInput)[srcCard];
+                                temp = temp.substring(temp.length() - 2);
+                            } else {
+                                temp = "00" + results.get(oneInput)[0];
+                                temp = temp.substring(temp.length() - 2);
+                            }
+                            break;
+                        }
                     }
                 }
                 return temp;
@@ -109,28 +132,52 @@ public class ProtocolInstance {
         }
     }
 
-    public String ReplaceData(String data, Integer playerID) {
+    public String ReplaceData(String data, Integer playerID, HashMap<String, String[]> results, Integer srcCard) {
+
+        String temp = null;
+
         if (data.startsWith("@")) {
             if (data.equalsIgnoreCase("@dst")) {
-                String temp = Integer.toHexString(playerID);
+                temp = Integer.toHexString(playerID);
                 if (temp.length() == 1) {
                     temp = "0" + temp;
                 }
                 temp = temp.substring(0, 2);
                 return temp;
             } else if (data.equalsIgnoreCase("@processors")) {
-                String temp = Integer.toHexString(this.processors);
+                temp = Integer.toHexString(this.processors);
+                if (temp.length() == 1) {
+                    temp = "0" + temp;
+                }
+                temp = temp.substring(0, 2);
+                return temp;
+            } else if (data.equalsIgnoreCase("@src")) {
+                temp = Integer.toHexString(srcCard);
                 if (temp.length() == 1) {
                     temp = "0" + temp;
                 }
                 temp = temp.substring(0, 2);
                 return temp;
             } else {
-                String temp = null;
                 for (String oneInput : this.parameters.keySet()) {
                     if (data.equalsIgnoreCase(oneInput)) {
+                        temp = this.parameters.get(oneInput);
                         if ((temp.length() % 2) == 1) {
                             temp = "0" + temp;
+                        }
+                        break;
+                    }
+                }
+                if (temp == null) {
+                    for (String oneInput : results.keySet()) {
+                        if (data.equalsIgnoreCase(oneInput)) {
+                            if (results.get(oneInput).length > 1) {
+                                temp = "00" + results.get(oneInput)[srcCard];
+                                temp = temp.substring(temp.length() - 2);
+                            } else {
+                                temp = "00" + results.get(oneInput)[0];
+                                temp = temp.substring(temp.length() - 2);
+                            }
                         }
                         break;
                     }
@@ -296,7 +343,7 @@ public class ProtocolInstance {
                 String[] apduArray = new String[this.processors];
                 if (oneStep.from.equals("@worker")) {
                     for (int srcCard = 0; srcCard < this.processors; srcCard++) {
-                        apduArray[srcCard] = CreateAPDU(player, ins, params, results);
+                        apduArray[srcCard] = CreateAPDU(player, ins, params, results, srcCard);
                     }
                 }
                 // and now we should call the smartcard
@@ -330,24 +377,24 @@ public class ProtocolInstance {
         return results;
     }
 
-    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String> params, HashMap<String, String[]> results) {
+    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String> params, HashMap<String, String[]> results, int srcCard) {
         // let's now create a command
         String apduString = ins.cls + ins.ins;
 
-        String p1 = this.ReplacePx(ins.p1, player.getR());
+        String p1 = this.ReplacePx(ins.p1, player.getR(), results, srcCard);
         if (p1 == null) {
             return null;
         } else {
             apduString += p1;
         }
-        String p2 = this.ReplacePx(ins.p2, player.getR());
+        String p2 = this.ReplacePx(ins.p2, player.getR(), results, srcCard);
         if (p2 == null) {
             return null;
         } else {
             apduString += p2;
         }
         if (ins.data != null) {
-            String data = this.ReplaceData(ins.data, player.getR());
+            String data = this.ReplaceData(ins.data, player.getR(), results, srcCard);
             String dataLen = Integer.toHexString(data.length() / 2);
             if (dataLen.length() == 1) {
                 dataLen = "0" + dataLen;
