@@ -318,14 +318,14 @@ public class ProtocolInstance {
         return this.status;
     }
 
-    public HashMap<String, String[]> runPhase(String phase, HashMap<String, String> params, ProtocolDefinition.Phase detail) {
+    public HashMap<String, String[]> runPhase(String phase, ProtocolDefinition.Phase detail) {
 
         LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
 
         HashMap<String, String[]> results = new HashMap<>();
 
         //let's first check we have all input parameters
-        if (!detail.checkInputs(params)) {
+        if (!detail.checkInputs(this.parameters)) {
             LOG.error("Missing entry parameters");
             return null;
         }
@@ -340,11 +340,15 @@ public class ProtocolInstance {
             for (String playerID : this.getCardKeys()) {
                 Pair<AppletStatus, Integer> player = this.getCard(playerID);
 
-                String[] apduArray = new String[this.processors];
+                String[] apduArray;
                 if (oneStep.from.equals("@worker")) {
+                    apduArray =  new String[this.processors];
                     for (int srcCard = 0; srcCard < this.processors; srcCard++) {
-                        apduArray[srcCard] = CreateAPDU(player, ins, params, results, srcCard);
+                        apduArray[srcCard] = CreateAPDU(player, ins, results, srcCard);
                     }
+                } else {
+                    apduArray = new String[1];
+                    apduArray[0] = CreateAPDU(player, ins, results, -1);
                 }
                 // and now we should call the smartcard
                 RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(),
@@ -359,7 +363,7 @@ public class ProtocolInstance {
                 for (RunnableRunAPDU value : apduThreads) {
                     if (value.GetStatus().equals("9000")) {
                         String apduResponse = value.GetResponse();
-                        if (ins.result.startsWith("@")) {
+                        if ((ins.result!= null) && ins.result.startsWith("@")) {
                             if (!results.containsKey(ins.result)) {
                                 results.put(ins.result, new String[this.processors]);
                             }
@@ -377,7 +381,7 @@ public class ProtocolInstance {
         return results;
     }
 
-    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String> params, HashMap<String, String[]> results, int srcCard) {
+    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String[]> results, int srcCard) {
         // let's now create a command
         String apduString = ins.cls + ins.ins;
 
@@ -403,6 +407,10 @@ public class ProtocolInstance {
         }
 
         return apduString;
+    }
+
+    public void addParameter(String name, String value) {
+        this.parameters.put(name, value);
     }
 
     public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}

@@ -229,28 +229,29 @@ public class MPCController {
             String phase = parsedContent.getString("phase");
             String protocolName = parsedContent.getString("protocol");
             HashMap<String, String> params = new HashMap<>();
-            if (!parsedContent.isNull("input")) {
-                JSONArray parameters = parsedContent.getJSONArray("input");
-                for (Object oneParam : parameters) {
-                    if (oneParam instanceof JSONObject) {
-                        JSONObject oneParamJSON = (JSONObject) oneParam;
-                        String name = "@" + oneParamJSON.getString("name");
-                        String value = oneParamJSON.getString("value");
-                        params.put(name, value);
-                    } else {
-                        LOG.error("Input parameters not valid: {}", oneParam);
+            ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
+
+            if (prot != null) {
+                if (!parsedContent.isNull("input")) {
+                    JSONArray parameters = parsedContent.getJSONArray("input");
+                    for (Object oneParam : parameters) {
+                        if (oneParam instanceof JSONObject) {
+                            JSONObject oneParamJSON = (JSONObject) oneParam;
+                            String name = "@" + oneParamJSON.getString("name");
+                            String value = oneParamJSON.getString("value");
+                            prot.addParameter(name, value);
+                        } else {
+                            LOG.error("Input parameters not valid: {}", oneParam);
+                        }
                     }
                 }
-            }
 
-            ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
-            if (prot != null) {
                 String name = "@processors";
                 String value = Integer.toHexString(prot.getCardKeys().size());
                 if ((value.length() % 2) == 1) {
                     value = "0" + value;
                 }
-                params.put(name, value);
+                prot.addParameter(name, value);
             }
             if (!GlobalConfiguration.isProtocol(protocolName) || (prot == null)) {
                 msgBack.setError("Protocol not known");
@@ -260,7 +261,7 @@ public class MPCController {
                 status = Consts.SW_STAT_UNKNOWN_PHASE;
             } else {
                 ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
-                HashMap<String, String[]> result = prot.runPhase(phase, params, detail);
+                HashMap<String, String[]> result = prot.runPhase(phase, detail);
 
                 if (result == null) {
                     msgBack.setError("Protocol phase not known");
