@@ -47,7 +47,7 @@ public class InstanceResponseData implements GeneralResponseData {
         detail.setUID(instance.getUID());
         LinkedList<String> cards = new LinkedList<>();
         for (String xx: instance.getCardKeys()){
-            cards.add(xx);
+            cards.add(instance.getCard(xx).getL().getReader());
         }
         detail.setCards(cards);
         detail.setGroupSize(instance.getCardKeys().size());
