@@ -342,9 +342,11 @@ public class ProtocolInstance {
 
                 String[] apduArray;
                 if (oneStep.from.equals("@worker")) {
-                    apduArray =  new String[this.processors];
+                    apduArray = new String[this.processors - 1];
                     for (int srcCard = 0; srcCard < this.processors; srcCard++) {
-                        apduArray[srcCard] = CreateAPDU(player, ins, results, srcCard);
+                        if (srcCard != player.getR()) {
+                            apduArray[srcCard] = CreateAPDU(player, ins, results, srcCard);
+                        }
                     }
                 } else {
                     apduArray = new String[1];
@@ -363,7 +365,7 @@ public class ProtocolInstance {
                 for (RunnableRunAPDU value : apduThreads) {
                     if (value.GetStatus().equals("9000")) {
                         String apduResponse = value.GetResponse();
-                        if ((ins.result!= null) && ins.result.startsWith("@")) {
+                        if ((ins.result != null) && ins.result.startsWith("@")) {
                             if (!results.containsKey(ins.result)) {
                                 results.put(ins.result, new String[this.processors]);
                             }

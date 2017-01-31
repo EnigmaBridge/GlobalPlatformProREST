@@ -172,7 +172,7 @@
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_HASH",
-            "from":"@worker",
+            "from":"@server",
             "to":"@worker"
             },
             {
@@ -182,7 +182,7 @@
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_PUBKEY",
-            "from":"@worker",
+            "from":"@server",
             "to":"@worker"
             },
             {
@@ -192,8 +192,8 @@
             },
             {
             "apdu":"INS_KEYGEN_RETRIEVE_AGG_PUBKEY",
-            "from":"@worker",
-            "to":"@server",
+            "from":"@server",
+            "to":"@worker",
             "result":"@aggkey"
             }
         ],
