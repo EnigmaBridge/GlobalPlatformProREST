@@ -41,18 +41,25 @@ public class RunnableRunAPDU implements Runnable {
     private final Integer m_index;
     private String m_aid;
     private AppletStatus m_applet;
-    private String m_result;
+    private String[] m_result;
     private Long latency;
+    private int m_apduCommands;
 
     public RunnableRunAPDU(String aid, AppletStatus status, Integer index, String[] apdu) {
         m_aid = aid;
         m_applet = status;
         m_apdu = apdu;
+        m_apduCommands = apdu.length;
+        m_result = new String[m_apduCommands];
         m_index = index;
 
     }
 
-    public int GetIndex(){
+    int GetAPDUNumber() {
+        return m_apduCommands;
+    }
+
+    int GetIndex() {
         return m_index;
     }
 
@@ -60,19 +67,27 @@ public class RunnableRunAPDU implements Runnable {
         return m_apdu[0];
     }
 
-    public String GetResponse() {
-        if (m_result.length() <= 4) {
+    public String GetResponse(int index) {
+        if ((index < 0) || (index > m_apduCommands)) {
             return null;
         } else {
-            return m_result.substring(0, m_result.length() - 4);
+            if (m_result[index].length() <= 4) {
+                return null;
+            } else {
+                return m_result[index].substring(0, m_result[index].length() - 4);
+            }
         }
     }
 
-    public String GetStatus() {
-        if (m_result.length() < 4) {
+    public String GetStatus(int index) {
+        if ((index < 0) || (index > m_apduCommands)) {
             return null;
         } else {
-            return m_result.substring(m_result.length() - 4);
+            if (m_result[index].length() < 4) {
+                return null;
+            } else {
+                return m_result[index].substring(m_result[index].length() - 4);
+            }
         }
     }
 
@@ -89,7 +104,7 @@ public class RunnableRunAPDU implements Runnable {
 
         String request = m_applet.getCommand() + " -a "
                 + GlobalConfiguration.getSelectCommand(m_aid);
-        for (String currentAPDU: m_apdu) {
+        for (String currentAPDU : m_apdu) {
             request = request + " -a " + currentAPDU;
         }
 
@@ -108,18 +123,20 @@ public class RunnableRunAPDU implements Runnable {
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
             int counting = -1;
+            int command = 0;
             for (String line : outputLines) {
+                if (line.trim().equalsIgnoreCase(m_apdu[command])) {
+                    // we found a command
+                    counting = 0;
+                }
+
                 if (counting >= 0) {
                     counting += 1;
-                } else {
-                    line = line.trim();
-                    if (line.equalsIgnoreCase("# Sent")) {
-                        counting = 0;
-                    }
                 }
-                if (counting == 7) {
+                if (counting == 3) {
                     line = line.trim();
-                    m_result = line;
+                    m_result[command] = line;
+                    command += 1;
                     counting = -1;
                 }
             }
