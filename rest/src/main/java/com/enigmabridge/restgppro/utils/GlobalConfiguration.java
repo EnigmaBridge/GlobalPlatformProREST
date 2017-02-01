@@ -340,20 +340,20 @@ public class GlobalConfiguration {
                 // let's now create a command
                 String apduString = ins.cls + ins.ins;
 
-                String p1 = prot.ReplacePx(ins.p1, player.getR(), null, -1);
+                String p1 = prot.ReplacePx(ins.p1, player.getR(), -1);
                 if (p1 == null) {
                     return false;
                 } else {
                     apduString += p1;
                 }
-                String p2 = prot.ReplacePx(ins.p2, player.getR(), null, -1);
+                String p2 = prot.ReplacePx(ins.p2, player.getR(), -1);
                 if (p2 == null) {
                     return false;
                 } else {
                     apduString += p2;
                 }
                 if (ins.data != null) {
-                    String data = prot.ReplaceData(ins.data, player.getR(), null, -1);
+                    String data = prot.ReplaceData(ins.data, player.getR(), -1);
                     String dataLen = Integer.toHexString(data.length() / 2);
                     if (dataLen.length() == 1) {
                         dataLen = "0" + dataLen;
@@ -426,20 +426,20 @@ public class GlobalConfiguration {
             // let's now create a command
             String apduString = ins.cls + ins.ins;
 
-            String p1 = prot.ReplacePx(ins.p1, player.getR(), null, -1);
+            String p1 = prot.ReplacePx(ins.p1, player.getR(), -1);
             if (p1 == null) {
                 return false;
             } else {
                 apduString += p1;
             }
-            String p2 = prot.ReplacePx(ins.p2, player.getR(), null, -1);
+            String p2 = prot.ReplacePx(ins.p2, player.getR(), -1);
             if (p2 == null) {
                 return false;
             } else {
                 apduString += p2;
             }
             if (ins.data != null) {
-                String data = prot.ReplaceData(ins.data, player.getR(), null, -1);
+                String data = prot.ReplaceData(ins.data, player.getR(), -1);
                 String dataLen = Integer.toHexString(data.length() / 2);
                 if (dataLen.length() == 1) {
                     dataLen = "0" + dataLen;
@@ -460,7 +460,7 @@ public class GlobalConfiguration {
         try {
             executor.awaitTermination(20, TimeUnit.SECONDS);
             for (RunnableRunAPDU value : apduThreads) {
-                if (value.GetStatus().equals("9000")) {
+                if (value.GetStatus(0).equals("9000")) {
                     AppletStatus player = value.GetApplet();
                     player.setStatus(1);
                     GlobalConfiguration.SetAppletReady(player);

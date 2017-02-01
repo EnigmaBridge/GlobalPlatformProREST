@@ -46,7 +46,7 @@ public class ProtocolInstance {
     private String UID;
     private String protocolName = null;
     private HashMap<String, Pair<AppletStatus, Integer>> cards = new HashMap<>();
-    private HashMap<String, String> results = new HashMap<>();
+    private HashMap<String, String[][]> results = new HashMap<>();
     private int processors = 0;
 
     ;
@@ -72,7 +72,7 @@ public class ProtocolInstance {
         return cards.keySet();
     }
 
-    public String ReplacePx(String pX, Integer playerID, HashMap<String, String[]> results, int srcCard) {
+    public String ReplacePx(String pX, Integer playerID, int srcCard) {
         if (pX.startsWith("@")) {
             if (pX.equalsIgnoreCase("@dst")) {
                 String temp = Integer.toHexString(playerID);
@@ -114,10 +114,10 @@ public class ProtocolInstance {
                     for (String oneInput : results.keySet()) {
                         if (pX.equalsIgnoreCase(oneInput)) {
                             if (results.get(oneInput).length > 1) {
-                                temp = "00" + results.get(oneInput)[srcCard];
+                                temp = "00" + results.get(oneInput)[srcCard][0];
                                 temp = temp.substring(temp.length() - 2);
                             } else {
-                                temp = "00" + results.get(oneInput)[0];
+                                temp = "00" + results.get(oneInput)[0][0];
                                 temp = temp.substring(temp.length() - 2);
                             }
                             break;
@@ -132,7 +132,7 @@ public class ProtocolInstance {
         }
     }
 
-    public String ReplaceData(String data, Integer playerID, HashMap<String, String[]> results, Integer srcCard) {
+    public String ReplaceData(String data, Integer playerID, Integer srcCard) {
 
         String temp = null;
 
@@ -172,10 +172,10 @@ public class ProtocolInstance {
                     for (String oneInput : results.keySet()) {
                         if (data.equalsIgnoreCase(oneInput)) {
                             if (results.get(oneInput).length > 1) {
-                                temp = "00" + results.get(oneInput)[srcCard];
+                                temp = "00" + results.get(oneInput)[srcCard][0];
                                 temp = temp.substring(temp.length() - 2);
                             } else {
-                                temp = "00" + results.get(oneInput)[0];
+                                temp = "00" + results.get(oneInput)[0][0];
                                 temp = temp.substring(temp.length() - 2);
                             }
                         }
@@ -194,7 +194,7 @@ public class ProtocolInstance {
         return protocolName.toLowerCase();
     }
 
-    public void setProtocolName(ProtocolDefinition protocol) {
+    public void setProtocol(ProtocolDefinition protocol) {
         this.protocolName = protocol.getName();
         this.protocol = protocol;
 
@@ -242,7 +242,9 @@ public class ProtocolInstance {
     }
 
     public void addResult(String name, String value) {
-        this.results.put(name, value);
+        String [][] valueIn = new String[1][1];
+        valueIn[0][0] = value;
+        this.results.put(name, valueIn);
     }
 
     public String getUID() {
@@ -318,11 +320,11 @@ public class ProtocolInstance {
         return this.status;
     }
 
-    public HashMap<String, String[]> runPhase(String phase, ProtocolDefinition.Phase detail) {
+    public HashMap<String, String[][]> runPhase(String phase, ProtocolDefinition.Phase detail) {
 
         LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
 
-        HashMap<String, String[]> results = new HashMap<>();
+        //HashMap<String, String[][]> results = new HashMap<>();
 
         //let's first check we have all input parameters
         if (!detail.checkInputs(this.parameters)) {
@@ -345,12 +347,12 @@ public class ProtocolInstance {
                     apduArray = new String[this.processors - 1];
                     for (int srcCard = 0; srcCard < this.processors; srcCard++) {
                         if (srcCard != player.getR()) {
-                            apduArray[srcCard] = CreateAPDU(player, ins, results, srcCard);
+                            apduArray[srcCard] = CreateAPDU(player, ins, srcCard);
                         }
                     }
                 } else {
                     apduArray = new String[1];
-                    apduArray[0] = CreateAPDU(player, ins, results, -1);
+                    apduArray[0] = CreateAPDU(player, ins, -1);
                 }
                 // and now we should call the smartcard
                 RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(),
@@ -363,16 +365,22 @@ public class ProtocolInstance {
             try {
                 executor.awaitTermination(20, TimeUnit.SECONDS);
                 for (RunnableRunAPDU value : apduThreads) {
-                    if (value.GetStatus().equals("9000")) {
-                        String apduResponse = value.GetResponse();
-                        if ((ins.result != null) && ins.result.startsWith("@")) {
-                            if (!results.containsKey(ins.result)) {
-                                results.put(ins.result, new String[this.processors]);
-                            }
-                            results.get(ins.result)[value.GetIndex()] = value.GetResponse();
+                    String[][] dataIn = new String[processors][value.GetAPDUNumber()];
+                    String result = null;
+                    if ((ins.result != null) && ins.result.startsWith("@")) {
+                        result = ins.result;
+                        if (!results.containsKey(ins.result)) {
+                            results.putIfAbsent(ins.result, dataIn);
                         }
-                    } else {
-                        LOG.error("Error executing APDU command {} {}", value.GetStatus(), value.GetApplet().getReader(), value.GetAPDU());
+                    }
+                    for (int index = 0; index < value.GetAPDUNumber(); index++) {
+                        if (value.GetStatus(index).equals("9000")) {
+                            if (result != null) {
+                                dataIn[value.GetIndex()][index] = value.GetResponse(index);
+                            }
+                        } else {
+                            LOG.error("Error executing APDU command {} {}", value.GetStatus(index), value.GetApplet().getReader(), value.GetAPDU(index));
+                        }
                     }
                 }
             } catch (InterruptedException e) {
@@ -384,24 +392,25 @@ public class ProtocolInstance {
         return results;
     }
 
-    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins, HashMap<String, String[]> results, int srcCard) {
+    private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins,
+                              int srcCard) {
         // let's now create a command
         String apduString = ins.cls + ins.ins;
 
-        String p1 = this.ReplacePx(ins.p1, player.getR(), results, srcCard);
+        String p1 = this.ReplacePx(ins.p1, player.getR(), srcCard);
         if (p1 == null) {
             return null;
         } else {
             apduString += p1;
         }
-        String p2 = this.ReplacePx(ins.p2, player.getR(), results, srcCard);
+        String p2 = this.ReplacePx(ins.p2, player.getR(), srcCard);
         if (p2 == null) {
             return null;
         } else {
             apduString += p2;
         }
         if (ins.data != null) {
-            String data = this.ReplaceData(ins.data, player.getR(), results, srcCard);
+            String data = this.ReplaceData(ins.data, player.getR(), srcCard);
             String dataLen = Integer.toHexString(data.length() / 2);
             if (dataLen.length() == 1) {
                 dataLen = "0" + dataLen;

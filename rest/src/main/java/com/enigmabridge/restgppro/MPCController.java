@@ -121,7 +121,7 @@ public class MPCController {
                     ProtocolInstance prot = new ProtocolInstance();
                     prot.setUID(protocolInstanceUID);
                     prot.setProcessors(size);
-                    prot.setProtocolName(GlobalConfiguration.getProtocol(protocol));
+                    prot.setProtocol(GlobalConfiguration.getProtocol(protocol));
                     prot.setPassword(password);
                     for (AppletStatus onecard : instanceProcessors) {
                         prot.addProcessor(onecard.getAppletID(), onecard.getReader(), -1);
@@ -261,7 +261,7 @@ public class MPCController {
                 status = Consts.SW_STAT_UNKNOWN_PHASE;
             } else {
                 ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
-                HashMap<String, String[]> result = prot.runPhase(phase, detail);
+                HashMap<String, String[][]> result = prot.runPhase(phase, detail);
 
                 if (result == null) {
                     msgBack.setError("Protocol phase not known");

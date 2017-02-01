@@ -63,8 +63,8 @@ public class RunnableRunAPDU implements Runnable {
         return m_index;
     }
 
-    public String GetAPDU() {
-        return m_apdu[0];
+    public String GetAPDU(int index) {
+        return m_apdu[index];
     }
 
     public String GetResponse(int index) {
