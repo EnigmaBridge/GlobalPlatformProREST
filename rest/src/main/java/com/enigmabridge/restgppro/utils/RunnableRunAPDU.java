@@ -102,10 +102,13 @@ public class RunnableRunAPDU implements Runnable {
     @Override
     public void run() {
 
-        String request = m_applet.getCommand() + " -a "
-                + GlobalConfiguration.getSelectCommand(m_aid);
+        String select = GlobalConfiguration.getSelectCommand(m_aid);
+        String request = m_applet.getCommand() +
+                " -a " + select;
+        m_applet.logAPDU(select);
         for (String currentAPDU : m_apdu) {
             request = request + " -a " + currentAPDU;
+            m_applet.logAPDU(currentAPDU);
         }
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();

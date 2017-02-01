@@ -22,6 +22,8 @@
 
 package com.enigmabridge.restgppro.utils;
 
+import java.util.LinkedList;
+
 /**
  * Created by Enigma Bridge Ltd (dan) on 18/01/2017.
  */
@@ -36,16 +38,17 @@ public class AppletStatus {
     private String command = null;
     private String protocolInstance = null;
     private String AID;
+    private LinkedList<String> m_log =  new LinkedList<>();
 
     public void setAppletID(byte[] raw, int counter, int length) {
         this.appletID = new byte[length];
         System.arraycopy(raw, counter, appletID, 0, length);
     }
 
-    public String getAppletID(){
-        if (appletID!=null){
+    public String getAppletID() {
+        if (appletID != null) {
             StringBuilder sb = new StringBuilder(appletID.length * 2);
-            for(byte b: appletID)
+            for (byte b : appletID)
                 sb.append(String.format("%02x", b));
             return sb.toString();
         } else {
@@ -103,7 +106,7 @@ public class AppletStatus {
 
     }
 
-    public String getProtocolInstance(){
+    public String getProtocolInstance() {
         if (status == Status.BUSY) {
             return protocolInstance;
         } else {
@@ -121,6 +124,10 @@ public class AppletStatus {
 
     public void setAID(String AID) {
         this.AID = AID;
+    }
+
+    public void logAPDU(String apdu) {
+        m_log.add(apdu);
     }
 
     public enum Status {UNDEF, ERROR, READY, BUSY}

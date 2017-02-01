@@ -49,9 +49,14 @@ public class RunnableGetStates implements Runnable {
     @Override
     public void run() {
 
-        String request = m_status.getCommand() + " -a "
-                + GlobalConfiguration.getSelectCommand(m_key) + " -a "
-                + GlobalConfiguration.getStatusAPDU();
+        String select = GlobalConfiguration.getSelectCommand(m_key);
+        String getStatus = GlobalConfiguration.getStatusAPDU();
+        String request = m_status.getCommand() +
+                " -a " + select +
+                " -a " + getStatus;
+
+        m_status.logAPDU(select);
+        m_status.logAPDU(getStatus);
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream errout = new ByteArrayOutputStream();
