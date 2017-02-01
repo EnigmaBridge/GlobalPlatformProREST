@@ -194,7 +194,7 @@ public class ProtocolInstance {
         return protocolName.toLowerCase();
     }
 
-    public void setProtocol(ProtocolDefinition protocol) {
+    public void setProtocolName(ProtocolDefinition protocol) {
         this.protocolName = protocol.getName();
         this.protocol = protocol;
 
@@ -379,6 +379,7 @@ public class ProtocolInstance {
                 LOG.error("Processing timeout: {}", oneStep.apdu);
                 return null;
             }
+            apduThreads = new LinkedList<>();
         }
         return results;
     }

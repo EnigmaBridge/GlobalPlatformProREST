@@ -43,7 +43,7 @@ public class InstanceResponseData implements GeneralResponseData {
 
         Details detail = new Details();
 
-        detail.setProtocolName(instance.getProtocolName());
+        detail.setProtocol(instance.getProtocolName());
         detail.setUID(instance.getUID());
         LinkedList<String> cards = new LinkedList<>();
         for (String xx: instance.getCardKeys()){
@@ -64,11 +64,11 @@ public class InstanceResponseData implements GeneralResponseData {
         private String UID;
         private int groupSize;
 
-        public String getProtocolName() {
+        public String getProtocol() {
             return this.protocolName;
         }
 
-        void setProtocolName(String protocolName) {
+        void setProtocol(String protocolName) {
             this.protocolName = protocolName;
         }
 
@@ -88,7 +88,7 @@ public class InstanceResponseData implements GeneralResponseData {
             this.cards = cards;
         }
 
-        public int getGroupSize() {
+        public int getSize() {
             return this.groupSize;
         }
 

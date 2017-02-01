@@ -114,14 +114,14 @@ public class MPCController {
                     } else {
                         status = Consts.SW_STAT_PROCESSING_ERROR;
                     }
-                    msgData.setDetail((test < 0) ? 0 : test, size, protocolInstanceUID,
+                    msgData.setDetail((test < 0) ? 0 : test, size, protocol,
                             null);
                 } else {
                     String password = "password";
                     ProtocolInstance prot = new ProtocolInstance();
                     prot.setUID(protocolInstanceUID);
                     prot.setProcessors(size);
-                    prot.setProtocol(GlobalConfiguration.getProtocol(protocol));
+                    prot.setProtocolName(GlobalConfiguration.getProtocol(protocol));
                     prot.setPassword(password);
                     for (AppletStatus onecard : instanceProcessors) {
                         prot.addProcessor(onecard.getAppletID(), onecard.getReader(), -1);
@@ -134,7 +134,7 @@ public class MPCController {
                         prot.persist();
                         msgData.setInstance(protocolInstanceUID);
                         msgData.setPassword(password);
-                        msgData.setDetail(size, size, protocolInstanceUID,
+                        msgData.setDetail(size, size, protocol,
                                 instanceProcessors);
                     } else {
                         msgData = null;
