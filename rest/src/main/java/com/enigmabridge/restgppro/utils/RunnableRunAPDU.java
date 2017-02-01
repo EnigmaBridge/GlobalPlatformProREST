@@ -138,6 +138,9 @@ public class RunnableRunAPDU implements Runnable {
                     m_result[command] = line;
                     command += 1;
                     counting = -1;
+                    if (command >= m_apduCommands) {
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {

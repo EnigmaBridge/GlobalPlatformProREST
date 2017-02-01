@@ -464,11 +464,17 @@ public class GlobalConfiguration {
                     AppletStatus player = value.GetApplet();
                     player.setStatus(1);
                     GlobalConfiguration.SetAppletReady(player);
+                } else {
+                    LOG.error("Error response to a command {}: {}", value.GetAPDU(0), value.GetStatus(0));
                 }
             }
             return true;
         } catch (InterruptedException e) {
             return false;
+        } finally {
+            if (GlobalConfiguration.runs.containsKey(prot.getUID())){
+                GlobalConfiguration.runs.remove(prot.getUID());
+            }
         }
 
     }

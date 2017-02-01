@@ -187,6 +187,7 @@ public class MPCController {
                 if (!prot.removeFile()) {
                     LOG.error("Unsuccessful protocol instance delete: {}", prot.getUID());
                 }
+
                 msgData = new DestroyResponseData(instance);
                 msgData.setDetail();
 
