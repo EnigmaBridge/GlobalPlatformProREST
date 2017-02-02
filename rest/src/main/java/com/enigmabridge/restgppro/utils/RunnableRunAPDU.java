@@ -45,6 +45,7 @@ public class RunnableRunAPDU implements Runnable {
     private Long latency;
     private int m_apduCommands;
 
+
     public RunnableRunAPDU(String aid, AppletStatus status, Integer index, String[] apdu) {
         m_aid = aid;
         m_applet = status;
@@ -83,7 +84,8 @@ public class RunnableRunAPDU implements Runnable {
         if ((index < 0) || (index > m_apduCommands)) {
             return null;
         } else {
-            if (m_result[index].length() < 4) {
+            if ((m_result[index] == null) || (m_result[index].length() < 4)) {
+                LOG.error("Response from smartcard is invalid: {} {}", this.m_applet.getReader(), m_result[index]);
                 return null;
             } else {
                 return m_result[index].substring(m_result[index].length() - 4);
@@ -115,27 +117,30 @@ public class RunnableRunAPDU implements Runnable {
             m_applet.logAPDU(currentAPDU);
         }
 
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream errout = new ByteArrayOutputStream();
-
-        PrintStream psout = new PrintStream(stdout);
-        PrintStream pserr = new PrintStream(errout);
-
+        ByteArrayOutputStream stdout;
+        ByteArrayOutputStream errout;
         if (tool == null) {
+            stdout = new ByteArrayOutputStream();
+            errout = new ByteArrayOutputStream();
+
+            PrintStream psout = new PrintStream(stdout);
+            PrintStream pserr = new PrintStream(errout);
             tool = new GPTool(psout, pserr);
-            m_applet.setSession(tool);
+            m_applet.setSession(tool, stdout, errout);
+        } else {
+            stdout = m_applet.getStdout();
         }
 
         List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         try {
             latency = -System.currentTimeMillis();
-            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]),
-                    psout, pserr);
+            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
 
             latency += System.currentTimeMillis();
 
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+            stdout.reset();
             int counting = -1;
             int command = 0;
             for (String line : outputLines) {
@@ -157,8 +162,12 @@ public class RunnableRunAPDU implements Runnable {
                     }
                 }
             }
+            if (command == 0) {
+                LOG.error("No command result detected in output file {}", m_applet.getReader());
+            }
+
         } catch (Exception e) {
-            LOG.error("Exception in GPTool: {}", errout);
+            LOG.error("Exception in GPTool: {}", e.getMessage());
         }
     }
 }

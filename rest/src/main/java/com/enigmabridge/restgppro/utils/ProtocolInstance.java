@@ -172,11 +172,19 @@ public class ProtocolInstance {
                     for (String oneInput : results.keySet()) {
                         if (data.equalsIgnoreCase(oneInput)) {
                             if (results.get(oneInput).length > 1) {
-                                temp = "00" + results.get(oneInput)[srcCard][0];
-                                temp = temp.substring(temp.length() - 2);
+                                // we will use the last response
+                                int arrayLen = results.get(oneInput)[srcCard].length;
+                                temp = results.get(oneInput)[srcCard][arrayLen - 1];
+                                if (temp.length() % 2 == 1) {
+                                    LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                    temp = temp + "0";
+                                }
                             } else {
-                                temp = "00" + results.get(oneInput)[0][0];
-                                temp = temp.substring(temp.length() - 2);
+                                temp = results.get(oneInput)[0][0];
+                                if (temp.length() % 2 == 1) {
+                                    LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                    temp = temp + "0";
+                                }
                             }
                         }
                         break;
@@ -242,7 +250,7 @@ public class ProtocolInstance {
     }
 
     public void addResult(String name, String value) {
-        String [][] valueIn = new String[1][1];
+        String[][] valueIn = new String[1][1];
         valueIn[0][0] = value;
         this.results.put(name, valueIn);
     }
@@ -345,9 +353,11 @@ public class ProtocolInstance {
                 String[] apduArray;
                 if (oneStep.from.equals("@worker")) {
                     apduArray = new String[this.processors - 1];
+                    int arrayIndex = 0;
                     for (int srcCard = 0; srcCard < this.processors; srcCard++) {
                         if (srcCard != player.getR()) {
-                            apduArray[srcCard] = CreateAPDU(player, ins, srcCard);
+                            apduArray[arrayIndex] = CreateAPDU(player, ins, srcCard);
+                            arrayIndex += 1;
                         }
                     }
                 } else {
@@ -365,18 +375,24 @@ public class ProtocolInstance {
             try {
                 executor.awaitTermination(20, TimeUnit.SECONDS);
                 for (RunnableRunAPDU value : apduThreads) {
-                    String[][] dataIn = new String[processors][value.GetAPDUNumber()];
                     String result = null;
+                    String[][] dataIn = null;
                     if ((ins.result != null) && ins.result.startsWith("@")) {
                         result = ins.result;
                         if (!results.containsKey(ins.result)) {
-                            results.putIfAbsent(ins.result, dataIn);
+                            String[][] dataTemp = new String[processors][value.GetAPDUNumber()];
+                            results.putIfAbsent(ins.result, dataTemp);
                         }
+                        dataIn = results.get(ins.result);
                     }
                     for (int index = 0; index < value.GetAPDUNumber(); index++) {
                         if (value.GetStatus(index).equals("9000")) {
                             if (result != null) {
-                                dataIn[value.GetIndex()][index] = value.GetResponse(index);
+                                if (dataIn != null) {
+                                    dataIn[value.GetIndex()][index] = value.GetResponse(index);
+                                } else {
+                                    LOG.error("Result array is null, integrity problem: {}", ins.result);
+                                }
                             }
                         } else {
                             LOG.error("Error executing APDU command {} {}", value.GetStatus(index), value.GetApplet().getReader(), value.GetAPDU(index));

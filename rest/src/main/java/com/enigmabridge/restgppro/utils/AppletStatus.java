@@ -24,6 +24,7 @@ package com.enigmabridge.restgppro.utils;
 
 import pro.javacard.gp.GPTool;
 
+import java.io.ByteArrayOutputStream;
 import java.util.LinkedList;
 
 import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
@@ -44,6 +45,8 @@ public class AppletStatus {
     private String AID;
     private LinkedList<String> m_log =  new LinkedList<>();
     private GPTool session;
+    private ByteArrayOutputStream stdout;
+    private ByteArrayOutputStream stderr;
 
     public void setAppletID(byte[] raw, int counter, int length) {
         this.appletID = new byte[length];
@@ -140,8 +143,12 @@ public class AppletStatus {
         return session;
     }
 
-    public void setSession(GPTool session) {
+    public ByteArrayOutputStream getStdout() {return this.stdout; }
+
+    public void setSession(GPTool session, ByteArrayOutputStream stdout, ByteArrayOutputStream errout) {
         this.session = session;
+        this.stdout = stdout;
+        this.stderr = errout;
     }
 
     public enum Status {UNDEF, ERROR, READY, BUSY}
