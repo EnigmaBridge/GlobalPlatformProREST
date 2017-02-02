@@ -186,8 +186,8 @@ public class ProtocolInstance {
                                     temp = temp + "0";
                                 }
                             }
+                            break;
                         }
-                        break;
                     }
                 }
                 return temp;
