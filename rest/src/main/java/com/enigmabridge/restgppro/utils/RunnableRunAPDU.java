@@ -103,9 +103,13 @@ public class RunnableRunAPDU implements Runnable {
     public void run() {
 
         String select = GlobalConfiguration.getSelectCommand(m_aid);
-        String request = m_applet.getCommand() +
-                " -a " + select;
-        m_applet.logAPDU(select);
+        String request = m_applet.getCommand();
+        GPTool tool = m_applet.getSession();
+
+        if (tool == null) {
+            request += " -a " + select;
+            m_applet.logAPDU(select);
+        }
         for (String currentAPDU : m_apdu) {
             request = request + " -a " + currentAPDU;
             m_applet.logAPDU(currentAPDU);
@@ -116,11 +120,18 @@ public class RunnableRunAPDU implements Runnable {
 
         PrintStream psout = new PrintStream(stdout);
         PrintStream pserr = new PrintStream(errout);
-        GPTool tool = new GPTool(psout, pserr);
+
+        if (tool == null) {
+            tool = new GPTool(psout, pserr);
+            m_applet.setSession(tool);
+        }
+
         List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         try {
             latency = -System.currentTimeMillis();
-            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]),
+                    psout, pserr);
+
             latency += System.currentTimeMillis();
 
             // lets' now parse the output

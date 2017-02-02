@@ -22,7 +22,11 @@
 
 package com.enigmabridge.restgppro.utils;
 
+import pro.javacard.gp.GPTool;
+
 import java.util.LinkedList;
+
+import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 18/01/2017.
@@ -39,6 +43,7 @@ public class AppletStatus {
     private String protocolInstance = null;
     private String AID;
     private LinkedList<String> m_log =  new LinkedList<>();
+    private GPTool session;
 
     public void setAppletID(byte[] raw, int counter, int length) {
         this.appletID = new byte[length];
@@ -128,6 +133,15 @@ public class AppletStatus {
 
     public void logAPDU(String apdu) {
         m_log.add(apdu);
+        LOG.info("{} -> {}", this.reader, apdu);
+    }
+
+    public GPTool getSession() {
+        return session;
+    }
+
+    public void setSession(GPTool session) {
+        this.session = session;
     }
 
     public enum Status {UNDEF, ERROR, READY, BUSY}
