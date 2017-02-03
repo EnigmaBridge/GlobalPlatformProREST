@@ -73,15 +73,15 @@ public class RunnableGetStates implements Runnable {
             int counting = -1;
             boolean resultProcessed = false;
             for (String line : outputLines) {
+                if (line.trim().equalsIgnoreCase(getStatus)) {
+                    // we found a command
+                    counting = 0;
+                }
+
                 if (counting >= 0) {
                     counting += 1;
-                } else {
-                    line = line.trim();
-                    if (line.equalsIgnoreCase("# Sent")) {
-                        counting = 0;
-                    }
                 }
-                if (counting == 7) {
+                if (counting == 3) {
                     line = line.trim();
                     if (line.substring(line.length() - 4).equals("9000")) {
                         GlobalConfiguration.parseAppletStatus(m_status, line);
@@ -91,7 +91,9 @@ public class RunnableGetStates implements Runnable {
                         resultProcessed = true;
                     }
                     counting = -1;
+                    break;
                 }
+
             }
             if (!resultProcessed){
                 m_status.setStatus(-1);

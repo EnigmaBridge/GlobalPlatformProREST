@@ -328,11 +328,10 @@ public class ProtocolInstance {
         return this.status;
     }
 
-    public HashMap<String, String[][]> runPhase(String phase, ProtocolDefinition.Phase detail) {
+    public Pair<HashMap<String, String[][]>, HashMap<String, Long[][]>> runPhase(String phase, ProtocolDefinition.Phase detail) {
 
         LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
-
-        //HashMap<String, String[][]> results = new HashMap<>();
+        HashMap<String, Long[][]> timings = new HashMap<>();
 
         //let's first check we have all input parameters
         if (!detail.checkInputs(this.parameters)) {
@@ -374,7 +373,11 @@ public class ProtocolInstance {
             executor.shutdown();
             try {
                 executor.awaitTermination(20, TimeUnit.SECONDS);
+                timings.putIfAbsent(oneStep.apdu, new Long[apduThreads.size()][1]);
+                int threadIndex = 0;
                 for (RunnableRunAPDU value : apduThreads) {
+                    timings.get(oneStep.apdu)[threadIndex][0] = value.GetLatency();
+                    threadIndex += 1;
                     String result = null;
                     String[][] dataIn = null;
                     if ((ins.result != null) && ins.result.startsWith("@")) {
@@ -385,6 +388,7 @@ public class ProtocolInstance {
                         }
                         dataIn = results.get(ins.result);
                     }
+
                     for (int index = 0; index < value.GetAPDUNumber(); index++) {
                         if (value.GetStatus(index).equals("9000")) {
                             if (result != null) {
@@ -405,7 +409,20 @@ public class ProtocolInstance {
             }
             apduThreads = new LinkedList<>();
         }
-        return results;
+        LinkedList<String> resultNames = detail.getResults();
+
+        HashMap<String, String[][]> output = new HashMap<>();
+
+        for (String oneResultName : resultNames) {
+            if (this.results.containsKey(oneResultName)) {
+                output.putIfAbsent(oneResultName, results.get(oneResultName));
+            } else {
+                output.putIfAbsent(oneResultName, new String[0][0]);
+            }
+        }
+
+
+        return new Pair<>(output, timings);
     }
 
     private String CreateAPDU(Pair<AppletStatus, Integer> player, ProtocolDefinition.Instruction ins,
@@ -439,6 +456,10 @@ public class ProtocolInstance {
 
     public void addParameter(String name, String value) {
         this.parameters.put(name, value);
+    }
+
+    public int getSize() {
+        return processors;
     }
 
     public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}

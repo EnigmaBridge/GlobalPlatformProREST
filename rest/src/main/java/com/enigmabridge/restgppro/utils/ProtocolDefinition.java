@@ -252,6 +252,13 @@ public class ProtocolDefinition {
             }
             return result;
         }
+
+        public LinkedList<String> getResults() {
+
+            LinkedList<String> results = new LinkedList<>();
+            results.add(result);
+            return results;
+        }
     }
 
     class Instruction {

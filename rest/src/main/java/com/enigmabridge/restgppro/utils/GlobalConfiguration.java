@@ -234,6 +234,7 @@ public class GlobalConfiguration {
                 }
             }
         }
+
         applet.setStatus(status);
         if (applet.getStatus() == AppletStatus.Status.READY) {
             appletsReady.get(applet.getAID()).add(applet);
@@ -362,7 +363,7 @@ public class GlobalConfiguration {
                 }
 
                 // and now we should call the smartcard
-                String []apduArray = new String[1];
+                String[] apduArray = new String[1];
                 apduArray[0] = apduString;
                 RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray);
                 executor.execute(oneSC);
@@ -406,7 +407,6 @@ public class GlobalConfiguration {
         }
         return null;
     }
-
 
 
     public static boolean DestroyInstance(ProtocolInstance prot) {
@@ -472,7 +472,7 @@ public class GlobalConfiguration {
         } catch (InterruptedException e) {
             return false;
         } finally {
-            if (GlobalConfiguration.runs.containsKey(prot.getUID())){
+            if (GlobalConfiguration.runs.containsKey(prot.getUID())) {
                 GlobalConfiguration.runs.remove(prot.getUID());
             }
         }
@@ -496,8 +496,8 @@ public class GlobalConfiguration {
         protocolName = protocolName.toLowerCase();
         phase = phase.toLowerCase();
 
-        if (protocols.containsKey(protocolName)){
-            if (protocols.get(protocolName).getPhase(phase) != null){
+        if (protocols.containsKey(protocolName)) {
+            if (protocols.get(protocolName).getPhase(phase) != null) {
                 return true;
             }
         }
@@ -509,7 +509,7 @@ public class GlobalConfiguration {
         phase = phase.toLowerCase();
 
         ProtocolDefinition.Phase detail = null;
-        if (protocols.containsKey(protocolName)){
+        if (protocols.containsKey(protocolName)) {
             detail = protocols.get(protocolName).getPhase(phase);
         }
         return detail;

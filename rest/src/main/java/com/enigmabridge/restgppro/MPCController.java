@@ -262,14 +262,17 @@ public class MPCController {
                 status = Consts.SW_STAT_UNKNOWN_PHASE;
             } else {
                 ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
-                HashMap<String, String[][]> result = prot.runPhase(phase, detail);
+                Pair<HashMap<String, String[][]>, HashMap<String, Long[][]>> allResult = prot.runPhase(phase, detail);
 
-                if (result == null) {
+                if (allResult == null) {
                     msgBack.setError("Protocol phase not known");
                     status = Consts.SW_STAT_UNKNOWN_PHASE;
                 } else {
                     msgData = new RunResponseData();
-                    msgData.setDetail(0, 0, null, null);
+                    msgData.setProtocol(prot.getProtocolName());
+                    msgData.setInstance(prot.getUID());
+                    msgData.setSize(prot.getSize());
+                    msgData.setDetail(allResult.getL(), allResult.getR());
                 }
             }
 

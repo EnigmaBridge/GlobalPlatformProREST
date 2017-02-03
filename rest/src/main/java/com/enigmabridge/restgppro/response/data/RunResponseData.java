@@ -22,17 +22,16 @@
 
 package com.enigmabridge.restgppro.response.data;
 
-import com.enigmabridge.restgppro.utils.AppletStatus;
-
-import java.util.LinkedList;
+import java.util.HashMap;
 
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class RunResponseData implements GeneralResponseData {
     private String instance;
-    private String password;
     private Details detail;
+    private int size;
+    private String protocol;
 
     @Override
     public void setValue(Object value) {
@@ -47,9 +46,9 @@ public class RunResponseData implements GeneralResponseData {
         this.instance = instance;
     }
 
-    public void setDetail(int i, int size, String protocolInstance,
-                          LinkedList<AppletStatus> instanceProcessors) {
-        detail = new Details(i, size, protocolInstance, instanceProcessors);
+
+    public void setDetail(HashMap<String, String[][]> results, HashMap<String, Long[][]> timings) {
+        detail = new Details(results, timings);
 
     }
 
@@ -57,40 +56,38 @@ public class RunResponseData implements GeneralResponseData {
         return detail;
     }
 
+    public int getSize() {
+        return this.size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public String getProtocol() {
+        return this.protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
 
     public class Details {
-        private int processors = 0;
-        private int allocated = 0;
-        private String protocol;
-        private LinkedList<String> cards;
+        private final HashMap<String, Long[][]> timing;
+        private HashMap<String, String[][]> result;
 
-        public Details(int allocated, int size, String name, LinkedList<AppletStatus> procs) {
-            this.processors = size;
-            this.allocated = allocated;
-            protocol = name;
-
-            if (procs != null) {
-                cards = new LinkedList<>();
-                for (AppletStatus st : procs) {
-                    cards.add(st.getReader());
-                }
-            }
+        public Details(HashMap<String, String[][]> results, HashMap<String, Long[][]> timings) {
+            this.result = results;
+            this.timing = timings;
         }
 
-        public int getSize() {
-            return processors;
+        public HashMap<String, String[][]> getResult() {
+            return result;
         }
 
-        public int getAllocated() {
-            return allocated;
+        public HashMap<String, Long[][]> getTiming() {
+            return timing;
         }
 
-        public String getProtocol() {
-            return protocol;
-        }
-
-        public LinkedList<String> getProcessors() {
-            return cards;
-        }
     }
 }
