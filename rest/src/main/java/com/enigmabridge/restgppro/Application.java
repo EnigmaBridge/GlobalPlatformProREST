@@ -59,48 +59,59 @@ public class Application implements CommandLineRunner {
     private ErrorAttributes errorAttributes;
 
     public static void main(String[] args) {
-        int status = Consts.SW_STAT_OK;
 
-        // first, let's initialize the server instance by reading configuration data from
-        // the disk
-
-        String globalfilename = "global.json";
-        File globalFile = new File(globalfilename);
-        String globalPathAbs = null;
         try {
-            globalPathAbs = globalFile.getCanonicalPath();
-        } catch (Exception ex) {
-        }
-        LOG.info("Reading global configuration file from {}", globalPathAbs);
-        if (globalPathAbs != null) {
-            if (!ReadGlobalConfiguration(globalFile)) {
-                LOG.error("Global configuration file not found or invalid {}", globalPathAbs);
-                status = SW_STAT_INVALID_GLOBAL_CONFIG;
+
+            int status = Consts.SW_STAT_OK;
+
+            // first, let's initialize the server instance by reading configuration data from
+            // the disk
+
+            String globalfilename = "global.json";
+            File globalFile = new File(globalfilename);
+            String globalPathAbs = null;
+            try {
+                globalPathAbs = globalFile.getCanonicalPath();
+            } catch (Exception ex) {
             }
-        } else {
-            LOG.error("Error when creating global file path");
-            status = SW_STAT_SYSTEM_ERROR;
-        }
-
-        // the next step is to figure out what hardware we have available
-        if (status == SW_STAT_OK) {
-            if (!ScanReaders()) {
-                status = SW_STAT_READERS_ERROR;
+            LOG.info("Reading global configuration file from {}", globalPathAbs);
+            if (globalPathAbs != null) {
+                if (!ReadGlobalConfiguration(globalFile)) {
+                    LOG.error("Global configuration file not found or invalid {}", globalPathAbs);
+                    status = SW_STAT_INVALID_GLOBAL_CONFIG;
+                }
+            } else {
+                LOG.error("Error when creating global file path");
+                status = SW_STAT_SYSTEM_ERROR;
             }
-            if (!ScanSimonas()) {
-                status = SW_STAT_SIMONAS_ERROR;
+
+            // the next step is to figure out what hardware we have available
+            if (status == SW_STAT_OK) {
+                if (GlobalConfiguration.getReaderUse()) {
+                    if (!ScanReaders()) {
+                        status = SW_STAT_READERS_ERROR;
+                    }
+                }
+                if (!ScanSimonas()) {
+                    status = SW_STAT_SIMONAS_ERROR;
+                }
             }
-        }
 
-        // now we have information about all the applets available - let's check which are MPC
-        UpdateAppletStates();
+            // now we have information about all the applets available - let's check which are MPC
+            UpdateAppletStates();
 
-        ReadProtocols();
+            ReadProtocols();
 
-        ReadProtocolInstances();
+            ReadProtocolInstances();
 
-        if (status == SW_STAT_OK) {
-            SpringApplication.run(Application.class, args);
+            if (status == SW_STAT_OK) {
+                SpringApplication.run(Application.class, args);
+            } else {
+                LOG.error("Exiting as there was an error indicated by scanners {}", status);
+            }
+        } catch (Throwable ex) {
+            System.err.println("Uncaught exception - " + ex.getMessage());
+            ex.printStackTrace(System.err);
         }
     }
 
@@ -348,7 +359,9 @@ public class Application implements CommandLineRunner {
         executor.shutdown();
         try {
             executor.awaitTermination(20, TimeUnit.SECONDS);
+            LOG.info("Finished processing card applet states");
         } catch (InterruptedException e) {
+            LOG.info("Interrupted processing card applet states");
         }
     }
 
@@ -442,6 +455,7 @@ public class Application implements CommandLineRunner {
                 }
             }
         } catch (Exception e) {
+            LOG.error("Exception in ScanReaders {}", e.getMessage());
             ok = false;
         }
 
@@ -479,6 +493,7 @@ public class Application implements CommandLineRunner {
                         }
                     }
                 } catch (Exception e) {
+                    LOG.error("Exception in ScanReaders {}", e.getMessage());
                     ok = false;
                 }
             }

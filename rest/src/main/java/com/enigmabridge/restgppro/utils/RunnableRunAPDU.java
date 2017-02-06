@@ -32,13 +32,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.List;
 
+import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
+
 /**
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class RunnableRunAPDU implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
     private final String[] m_apdu;
     private final Integer m_index;
+    private final boolean m_doReset;
     private String m_aid;
     private AppletStatus m_applet;
     private String[] m_result;

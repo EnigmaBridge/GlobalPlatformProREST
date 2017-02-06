@@ -59,6 +59,10 @@ public class GlobalConfiguration {
     private static HashMap<String, ProtocolInstance> runs = new HashMap<>();
     private static LinkedList<AppletStatus> appletsError = new LinkedList<>();
 
+    public static boolean getReaderUse() {
+        return GlobalConfiguration.readerUse;
+    }
+
     public static void setReaderUse(boolean readerScanning) {
         GlobalConfiguration.readerUse = readerScanning;
     }
