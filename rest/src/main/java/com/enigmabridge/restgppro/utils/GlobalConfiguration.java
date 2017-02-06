@@ -369,7 +369,8 @@ public class GlobalConfiguration {
                 // and now we should call the smartcard
                 String[] apduArray = new String[1];
                 apduArray[0] = apduString;
-                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray);
+                RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(),
+                        apduArray, true);
                 executor.execute(oneSC);
 
             }
@@ -455,7 +456,7 @@ public class GlobalConfiguration {
 
             String[] apduArray = new String[1];
             apduArray[0] = apduString;
-            RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray);
+            RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray, false);
             executor.execute(oneSC);
             apduThreads.add(oneSC);
 

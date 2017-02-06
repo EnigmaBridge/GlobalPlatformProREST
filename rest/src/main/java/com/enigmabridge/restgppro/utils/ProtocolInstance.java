@@ -365,7 +365,7 @@ public class ProtocolInstance {
                 }
                 // and now we should call the smartcard
                 RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(),
-                        player.getL(), player.getR(), apduArray);
+                        player.getL(), player.getR(), apduArray, false);
                 executor.execute(oneSC);
                 apduThreads.add(oneSC);
 

@@ -22,9 +22,6 @@
 
 package com.enigmabridge.restgppro.utils;
 
-import com.enigmabridge.restgppro.Application;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pro.javacard.gp.GPArgumentTokenizer;
 import pro.javacard.gp.GPTool;
 
@@ -48,13 +45,14 @@ public class RunnableRunAPDU implements Runnable {
     private int m_apduCommands;
 
 
-    public RunnableRunAPDU(String aid, AppletStatus status, Integer index, String[] apdu) {
+    public RunnableRunAPDU(String aid, AppletStatus status, Integer index, String[] apdu, boolean doReset) {
         m_aid = aid;
         m_applet = status;
         m_apdu = apdu;
         m_apduCommands = apdu.length;
         m_result = new String[m_apduCommands];
         m_index = index;
+        m_doReset = doReset;
 
     }
 
@@ -110,7 +108,7 @@ public class RunnableRunAPDU implements Runnable {
         String request = m_applet.getCommand();
         GPTool tool = m_applet.getSession();
 
-        if (tool == null) {
+        if ((tool == null) || (m_doReset)) {
             request += " -a " + select;
             m_applet.logAPDU(select);
         }

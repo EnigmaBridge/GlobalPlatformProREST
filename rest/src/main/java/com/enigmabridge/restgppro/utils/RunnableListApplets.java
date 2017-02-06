@@ -22,9 +22,6 @@
 
 package com.enigmabridge.restgppro.utils;
 
-import com.enigmabridge.restgppro.Application;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pro.javacard.gp.GPArgumentTokenizer;
 import pro.javacard.gp.GPTool;
 
@@ -38,7 +35,6 @@ import java.util.List;
 public class RunnableListApplets implements Runnable {
     private String m_reader;
     private String m_cmd;
-    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
     public RunnableListApplets(String reader, String cmd) {
         m_reader = reader;
