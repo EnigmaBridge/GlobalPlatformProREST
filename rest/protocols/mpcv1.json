@@ -82,8 +82,8 @@
         "ins": "50",  
         "p1": "00",
         "p2": "00",
-        "data": "@ecpoint",
-        "result": "@encecpoint"
+        "data": "@enplaintext",
+        "result": "@encryption"
     },
     {
         "name":"INS_DECRYPT",
@@ -92,7 +92,7 @@
         "p1": "00",
         "p2": "00",
         "data": "@ciphertext",
-        "result": "@dececpoint"
+        "result": "@decrypt"
     },
     {
         "name":"INS_SIGN_INIT",
@@ -133,7 +133,7 @@
     {
         "name":"INS_SIGN_RETRIEVE_RI",
         "cla": "B0",  
-        "ins": "74",   
+        "ins": "75",   
         "p1": "00",
         "p2": "00",
         "data": null,
@@ -142,7 +142,7 @@
     {
         "name":"INS_SIGN_RETRIEVE_R",
         "cla": "B0",  
-        "ins": "76",   
+        "ins": "78",   
         "p1": "00",
         "p2": "00",
         "data": null,
@@ -151,7 +151,7 @@
     {
         "name":"INS_SIGN",
         "cla": "B0",  
-        "ins": "77",   
+        "ins": "79",   
         "p1": "00",
         "p2": "00",
         "data": "@signplaintext",
@@ -200,8 +200,20 @@
         "result":"@aggkey"
     },
     {
+        "name":"encrypt",
+        "input":["@enplaintext"],
+        "apdus":[
+            {
+            "apdu":"INS_ENCRYPT",
+            "from":"@server",
+            "to":"@worker"
+            }
+       ],
+        "result":"@encryption"
+    },
+    {
         "name":"decrypt",
-        "input":["ciphertext"],
+        "input":["@ciphertext"],
         "apdus":[
             {
             "apdu":"INS_DECRYPT",
@@ -213,7 +225,7 @@
     },
     {
         "name":"sign",
-        "input":["@processors"],
+        "input":["@processors","@signplaintext"],
         "apdus":[
             {
             "apdu":"INS_SIGN_INIT",
@@ -222,7 +234,7 @@
             },
             {
             "apdu":"INS_SIGN_RETRIEVE_HASH",
-            "from":"@worker",
+            "from":"@server",
             "to":"@worker"
             },
             {
@@ -231,19 +243,19 @@
             "to":"@worker"
             },
             {
-            "apdu":"INS_KEYGEN_RETRIEVE_RI",
-            "from":"@worker",
+            "apdu":"INS_SIGN_RETRIEVE_RI",
+            "from":"@server",
             "to":"@worker"
             },
             {
-            "apdu":"INS_KEYGEN_STORE_RI",
+            "apdu":"INS_SIGN_STORE_RI",
             "from":"@worker",
             "to":"@worker"
             },
             {
             "apdu":"INS_SIGN",
-            "from":"@worker",
-            "to":"@server",
+            "from":"@server",
+            "to":"@worker",
             "result":"@signature"
             }
         ],
