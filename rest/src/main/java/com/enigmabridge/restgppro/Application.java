@@ -443,7 +443,7 @@ public class Application implements CommandLineRunner {
         List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         try {
             final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
-
+            tool.close(); //disconnect the card
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
             for (String line : outputLines) {
@@ -480,6 +480,7 @@ public class Application implements CommandLineRunner {
                 inputArgs = GPArgumentTokenizer.tokenize(request);
                 try {
                     final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+                    tool.close();
 
                     // lets' now parse the output
                     String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");

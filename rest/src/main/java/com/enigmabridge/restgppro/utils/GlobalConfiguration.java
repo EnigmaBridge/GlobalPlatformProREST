@@ -25,6 +25,7 @@ package com.enigmabridge.restgppro.utils;
 import com.enigmabridge.restgppro.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.javacard.gp.GPTool;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -58,6 +59,8 @@ public class GlobalConfiguration {
     private static HashMap<String, ProtocolDefinition> protocols = new HashMap<>();
     private static HashMap<String, ProtocolInstance> runs = new HashMap<>();
     private static LinkedList<AppletStatus> appletsError = new LinkedList<>();
+
+    private static ConcurrentHashMap<String, GPTool> terminals = new ConcurrentHashMap<>();
 
     public static boolean getReaderUse() {
         return GlobalConfiguration.readerUse;
@@ -337,8 +340,8 @@ public class GlobalConfiguration {
             // lets first find the instruction
             ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocolName());
 
-            BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
+            prot.queue = new LinkedBlockingDeque<>();
+            prot.executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, prot.queue);
             // init is always from "host" to all smartcards
             for (String playerID : prot.getCardKeys()) {
                 Pair<AppletStatus, Integer> player = prot.getCard(playerID);
@@ -371,12 +374,12 @@ public class GlobalConfiguration {
                 apduArray[0] = apduString;
                 RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(),
                         apduArray, true);
-                executor.execute(oneSC);
+                prot.executor.execute(oneSC);
 
             }
-            executor.shutdown();
+            prot.executor.shutdown();
             try {
-                executor.awaitTermination(50, TimeUnit.SECONDS);
+                prot.executor.awaitTermination(50, TimeUnit.SECONDS);
                 return true;
             } catch (InterruptedException e) {
                 return false;
@@ -423,8 +426,6 @@ public class GlobalConfiguration {
         // lets first find the instruction
         ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolDestroyCommand(prot.getProtocolName());
 
-        BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
         // init is always from "host" to all smartcards
         for (String playerID : prot.getCardKeys()) {
             Pair<AppletStatus, Integer> player = prot.getCard(playerID);
@@ -457,13 +458,13 @@ public class GlobalConfiguration {
             String[] apduArray = new String[1];
             apduArray[0] = apduString;
             RunnableRunAPDU oneSC = new RunnableRunAPDU(player.getL().getAID(), player.getL(), player.getR(), apduArray, false);
-            executor.execute(oneSC);
+            prot.executor.execute(oneSC);
             apduThreads.add(oneSC);
 
         }
-        executor.shutdown();
+        prot.executor.shutdown();
         try {
-            executor.awaitTermination(20, TimeUnit.SECONDS);
+            prot.executor.awaitTermination(20, TimeUnit.SECONDS);
             for (RunnableRunAPDU value : apduThreads) {
                 if (value.GetStatus(0).equals("9000")) {
                     AppletStatus player = value.GetApplet();

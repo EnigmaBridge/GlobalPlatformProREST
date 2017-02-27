@@ -30,10 +30,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.enigmabridge.restgppro.utils.AppletStatus.Status.READY;
 import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
@@ -56,6 +53,9 @@ public class ProtocolInstance {
     private int lastCardID = 0;
     private String AID;
     private ProtocolDefinition protocol = null;
+    //public ExecutorCompletionService<String> completionService;
+    public ThreadPoolExecutor executor;
+    public LinkedBlockingDeque queue;
 
     public ProtocolInstance() {
 
@@ -343,8 +343,6 @@ public class ProtocolInstance {
         for (ProtocolDefinition.PhaseStep oneStep : detail.steps) {
             ProtocolDefinition.Instruction ins = this.protocol.getInstruction(oneStep.apdu);
 
-            BlockingQueue<Runnable> queue = new LinkedBlockingDeque<>();
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, queue);
             // init is always from "host" to all smartcards
             for (String playerID : this.getCardKeys()) {
                 Pair<AppletStatus, Integer> player = this.getCard(playerID);

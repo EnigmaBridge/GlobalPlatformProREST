@@ -106,10 +106,10 @@ public final class GPTool {
 	private final static String OPT_VISA2 = "visa2";
 
 	protected PrintStream out = System.out;
-	protected PrintStream err = System.err;
+	private PrintStream err = System.err;
 	private Card card = null;
 	private GlobalPlatform gp = null;
-	List<CardTerminal> do_readers;
+	private List<CardTerminal> do_readers;
 
 	public GPTool() {
 	}
@@ -119,7 +119,7 @@ public final class GPTool {
 		this.err = err;
 	}
 
-	public static OptionParser setupParser(){
+	private static OptionParser setupParser(){
 		final OptionParser parser = new OptionParser();
 
 		// Generic options
@@ -204,7 +204,7 @@ public final class GPTool {
 		return parseArguments(argv, System.out, System.err);
 	}
 
-	public static OptionSet parseArguments(String[] argv, PrintStream out, PrintStream err) throws IOException {
+	private static OptionSet parseArguments(String[] argv, PrintStream out, PrintStream err) throws IOException {
 		OptionSet args = null;
 		final OptionParser parser = setupParser();
 
@@ -245,7 +245,7 @@ public final class GPTool {
 		return work(args);
 	}
 
-	public int work(OptionSet args) throws IOException, NoSuchAlgorithmException {
+	private int work(OptionSet args) throws IOException, NoSuchAlgorithmException {
 		if (args == null){
 			return -2;
 		}
@@ -354,6 +354,8 @@ public final class GPTool {
 			final TerminalFactory tf;
 
 			if (this.card == null) {
+				// this.card and tis.do_readers are persistent for the object instance
+				// once this initialized, we don't need to do the enumeration again
 				if (args.has(OPT_REPLAY)) {
 					// Replay responses from a file
 					// FIXME: use the generic provider interface and drop command line options
@@ -391,6 +393,15 @@ public final class GPTool {
 				if (do_readers.size() == 0) {
 					fail("No smart card readers with a card found");
 					return 1;
+				}
+			} else {
+				// List terminals if needed - as a repeated printout - at the moment only
+				// card present terminals
+				if (args.has(OPT_DEBUG)) {
+					out.println("# Readers with smartcards:");
+					for (CardTerminal term : do_readers) {
+						out.println((term.isCardPresent() ? "[*] " : "[ ] ") + term.getName());
+					}
 				}
 			}
 
@@ -853,13 +864,23 @@ public final class GPTool {
 		return 0;
 	}
 
+	public void close() throws CardException {
+
+		if (this.card != null) {
+			card.endExclusive();
+			card.disconnect(true);
+			card = null;
+		}
+	}
+
 	public static void main(String[] argv) throws Exception {
 		final GPTool tool = new GPTool();
 		final int returnCode = tool.work(argv);
+		tool.close();
 		System.exit(returnCode);
 	}
 
-	protected void fail(String msg) {
+	private void fail(String msg) {
 		err.println(msg);
 	}
 
