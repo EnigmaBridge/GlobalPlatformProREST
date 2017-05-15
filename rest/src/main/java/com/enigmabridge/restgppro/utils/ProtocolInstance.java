@@ -25,12 +25,16 @@ package com.enigmabridge.restgppro.utils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.enigmabridge.restgppro.utils.AppletStatus.Status.READY;
 import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
@@ -39,23 +43,23 @@ import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class ProtocolInstance {
+    //public ExecutorCompletionService<String> completionService;
+    public ThreadPoolExecutor executor;
+    public LinkedBlockingDeque queue;
     private HashMap<String, String> parameters = new HashMap<>();
     private String UID;
     private String protocolName = null;
     private HashMap<String, Pair<AppletStatus, Integer>> cards = new HashMap<>();
+
     private HashMap<String, String[][]> results = new HashMap<>();
     private int processors = 0;
-
-    ;
     private String password;
     private long lastEvent;
     private InstanceStatus status;
     private int lastCardID = 0;
     private String AID;
     private ProtocolDefinition protocol = null;
-    //public ExecutorCompletionService<String> completionService;
-    public ThreadPoolExecutor executor;
-    public LinkedBlockingDeque queue;
+
 
     public ProtocolInstance() {
 
@@ -171,7 +175,27 @@ public class ProtocolInstance {
                 if (temp == null) {
                     for (String oneInput : results.keySet()) {
                         if (data.equalsIgnoreCase(oneInput)) {
-                            if (results.get(oneInput).length > 1) {
+                            if (oneInput.startsWith("sum_")) {
+                                // sum -> we add up 1 .. n numbers into one string
+
+                                BigInteger result = BigInteger.ZERO;
+
+                                for (int srcCard_S = 0; srcCard_S < results.get(oneInput).length; srcCard_S++) {
+                                    int arrayLen = results.get(oneInput)[srcCard_S].length;
+                                    temp = results.get(oneInput)[srcCard_S][arrayLen - 1];
+                                    if (temp.length() % 2 == 1) {
+                                        LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                        temp = temp + "0";
+                                    }
+                                    BigInteger newItem = new BigInteger(temp);
+                                    result.add(newItem);
+                                }
+                                // result now contains the sum of all items, we need to add it to the
+                                // hash map of values
+                                temp = result.toString(16);
+
+
+                            } else if (results.get(oneInput).length > 1) {
                                 // we will use the last response
                                 int arrayLen = results.get(oneInput)[srcCard].length;
                                 temp = results.get(oneInput)[srcCard][arrayLen - 1];
@@ -452,6 +476,29 @@ public class ProtocolInstance {
         return apduString;
     }
 
+    /**
+     * Extracts data from the instruction and returns it as a byte array.
+     *
+     * @param player - information about the target smart card.
+     * @param ins    - an instruction result from the previous step.
+     * @return a data byte array or NULL
+     */
+    private byte[] GetInstructionData(Pair<AppletStatus, Integer> player,
+                                      ProtocolDefinition.Instruction ins) {
+
+        if (ins.data != null) {
+            String data = this.ReplaceData(ins.data, player.getR(), -1);
+            String dataLen = Integer.toHexString(data.length() / 2);
+            if (dataLen.length() == 1) {
+                dataLen = "0" + dataLen;
+            }
+            return DatatypeConverter.parseHexBinary(data);
+        } else {
+            return null;
+        }
+
+    }
+
     public void addParameter(String name, String value) {
         this.parameters.put(name, value);
     }
@@ -461,6 +508,5 @@ public class ProtocolInstance {
     }
 
     public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}
-
 
 }
