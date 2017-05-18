@@ -20,7 +20,7 @@ for players in range(2,3):
     instance_id = ""
     status = 0
     runs = starting
-    while runs < 1000:
+    while runs < 250:
         runs += 1;
         if ((time.time() - timestamp) >= UPTIME) or status != 0:
             if (instance_id is not None) and len(instance_id) > 2:
@@ -49,7 +49,7 @@ for players in range(2,3):
 
                 req = urllib2.Request('http://localhost:8081/api/v1/mpc/create')
                 req.add_header('Content-Type', 'application/json')
-                req.add_header('X-Auth-Token', 'public')
+                req.add_header('X-Auth-Token', 'business')
 
                 response = urllib2.urlopen(req, json.dumps(data_create))
                 create_response = response.read()
@@ -78,7 +78,7 @@ for players in range(2,3):
         if needKeyGen:
             req = urllib2.Request('http://localhost:8081/api/v1/mpc/run')
             req.add_header('Content-Type', 'application/json')
-            req.add_header('X-Auth-Token', 'public')
+            req.add_header('X-Auth-Token', 'business')
 
             try:
                 response = urllib2.urlopen(req, json.dumps(data_keygen))
@@ -103,15 +103,24 @@ for players in range(2,3):
             'instance': instance_id,
             'phase': 'sign',
             'protocol': 'mpcv1',
-            'input': [{'name': 'signplaintext',
-                       'value': '045C396F859500BEA636B100C7F01A9B487B143D828CA8F877C17CD0E285DC626A4588587FEF17215693A67A689C0342779BDA146DC108E8382D8C7071E3F42F79',
-                      'j0':runs%256,
-                      'j1':runs/256}]
+            'input': [{
+                'name': 'signplaintext',
+                'value': '045C396F859500BEA636B100C7F01A9B487B143D828CA8F877C17CD0E285DC626A4588587FEF17215693A67A689C0342779BDA146DC108E8382D8C7071E3F42F79'
+            },
+            {
+                'name':'j0',
+                'value':str.format("{:02X}",runs%256)
+            },
+            {
+                'name':'j1',
+                'value':str.format("{:02X}",runs/256)
+            }
+            ]
         }
 
         req = urllib2.Request('http://localhost:8081/api/v1/mpc/run')
         req.add_header('Content-Type', 'application/json')
-        req.add_header('X-Auth-Token', 'public')
+        req.add_header('X-Auth-Token', 'business')
 
         try:
             response = urllib2.urlopen(req, json.dumps(data_sign))
@@ -140,7 +149,7 @@ for players in range(2,3):
 
     req = urllib2.Request('http://localhost:8081/api/v1/mpc/destroy')
     req.add_header('Content-Type', 'application/json')
-    req.add_header('X-Auth-Token', 'public')
+    req.add_header('X-Auth-Token', 'business')
 
     response = urllib2.urlopen(req, json.dumps(data_destroy))
 

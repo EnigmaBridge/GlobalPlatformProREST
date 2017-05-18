@@ -11,3 +11,7 @@ classes
 *.yml
 logback.xml
 rest/instances
+scripts/results
+rest/global.json_offic
+rest/global.json_rem
+mpcv1.json_old
