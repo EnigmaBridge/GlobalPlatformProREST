@@ -163,58 +163,70 @@ public class ProtocolInstance {
                 temp = temp.substring(0, 2);
                 return temp;
             } else {
-                for (String oneInput : this.parameters.keySet()) {
-                    if (data.equalsIgnoreCase(oneInput)) {
-                        temp = this.parameters.get(oneInput);
-                        if ((temp.length() % 2) == 1) {
-                            temp = "0" + temp;
-                        }
-                        break;
+                String[] parts = data.split("@");
+                String tempAll = "";
+                for (String onedata : parts) {
+                    if (onedata.length() == 0) {
+                        continue;
+                    } else {
+                        data = "@" + onedata;
                     }
-                }
-                if (temp == null) {
-                    for (String oneInput : results.keySet()) {
+                    for (String oneInput : this.parameters.keySet()) {
                         if (data.equalsIgnoreCase(oneInput)) {
-                            if (oneInput.startsWith("sum_")) {
-                                // sum -> we add up 1 .. n numbers into one string
-
-                                BigInteger result = BigInteger.ZERO;
-
-                                for (int srcCard_S = 0; srcCard_S < results.get(oneInput).length; srcCard_S++) {
-                                    int arrayLen = results.get(oneInput)[srcCard_S].length;
-                                    temp = results.get(oneInput)[srcCard_S][arrayLen - 1];
-                                    if (temp.length() % 2 == 1) {
-                                        LOG.error("Data has odd length: {} {}", oneInput, temp);
-                                        temp = temp + "0";
-                                    }
-                                    BigInteger newItem = new BigInteger(temp);
-                                    result.add(newItem);
-                                }
-                                // result now contains the sum of all items, we need to add it to the
-                                // hash map of values
-                                temp = result.toString(16);
-
-
-                            } else if (results.get(oneInput).length > 1) {
-                                // we will use the last response
-                                int arrayLen = results.get(oneInput)[srcCard].length;
-                                temp = results.get(oneInput)[srcCard][arrayLen - 1];
-                                if (temp.length() % 2 == 1) {
-                                    LOG.error("Data has odd length: {} {}", oneInput, temp);
-                                    temp = temp + "0";
-                                }
-                            } else {
-                                temp = results.get(oneInput)[0][0];
-                                if (temp.length() % 2 == 1) {
-                                    LOG.error("Data has odd length: {} {}", oneInput, temp);
-                                    temp = temp + "0";
-                                }
+                            temp = this.parameters.get(oneInput);
+                            if ((temp.length() % 2) == 1) {
+                                temp = "0" + temp;
                             }
                             break;
                         }
                     }
+                    if (temp == null) {
+                        for (String oneInput : results.keySet()) {
+                            if (data.equalsIgnoreCase(oneInput)) {
+                                if (oneInput.startsWith("@sum_")) {
+                                    // sum -> we add up 1 .. n numbers into one string
+
+                                    BigInteger result = BigInteger.ZERO;
+
+                                    for (int srcCard_S = 0; srcCard_S < results.get(oneInput).length; srcCard_S++) {
+                                        int arrayLen = results.get(oneInput)[srcCard_S].length;
+                                        temp = results.get(oneInput)[srcCard_S][arrayLen - 1];
+                                        if (temp.length() % 2 == 1) {
+                                            LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                            temp = temp + "0";
+                                        }
+                                        BigInteger newItem = new BigInteger(temp);
+                                        result.add(newItem);
+                                    }
+                                    // result now contains the sum of all items, we need to add it to the
+                                    // hash map of values
+                                    temp = result.toString(16);
+
+
+                                } else if (results.get(oneInput).length > 1) {
+                                    // we will use the last response
+                                    int arrayLen = results.get(oneInput)[srcCard].length;
+                                    temp = results.get(oneInput)[srcCard][arrayLen - 1];
+                                    if (temp.length() % 2 == 1) {
+                                        LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                        temp = temp + "0";
+                                    }
+                                } else {
+                                    temp = results.get(oneInput)[0][0];
+                                    if (temp.length() % 2 == 1) {
+                                        LOG.error("Data has odd length: {} {}", oneInput, temp);
+                                        temp = temp + "0";
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (temp != null) {
+                        tempAll += temp;
+                    }
                 }
-                return temp;
+                return tempAll;
             }
         } else {
             // no change
@@ -363,8 +375,8 @@ public class ProtocolInstance {
             return null;
         }
 
-
         for (ProtocolDefinition.PhaseStep oneStep : detail.steps) {
+            this.executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, this.queue);
             ProtocolDefinition.Instruction ins = this.protocol.getInstruction(oneStep.apdu);
 
             // init is always from "host" to all smartcards

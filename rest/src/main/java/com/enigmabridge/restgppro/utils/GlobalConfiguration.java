@@ -425,7 +425,7 @@ public class GlobalConfiguration {
         }
         // lets first find the instruction
         ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolDestroyCommand(prot.getProtocolName());
-
+        prot.executor = new ThreadPoolExecutor(200, 1000, 10, TimeUnit.SECONDS, prot.queue);
         // init is always from "host" to all smartcards
         for (String playerID : prot.getCardKeys()) {
             Pair<AppletStatus, Integer> player = prot.getCard(playerID);
