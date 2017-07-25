@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
@@ -47,6 +48,11 @@ public class MPCController {
     private static final String template = "Hello, %s!";
     private static final String MPC_PATH = ApiConfig.API_PATH + "/mpc";
     private final AtomicLong counter = new AtomicLong();
+    private final AtomicInteger noOfInstances = new AtomicInteger(0);
+    private final AtomicInteger tps = new AtomicInteger(0);
+    private final AtomicInteger currentTPS = new AtomicInteger(0);
+    private final AtomicLong currentTPStime = new AtomicLong(0);
+    Object lock1 = new Object();
 
     @RequestMapping(MPC_PATH + "/greeting")
     public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") String name) {
@@ -136,6 +142,7 @@ public class MPCController {
                         msgData.setPassword(password);
                         msgData.setDetail(size, size, protocol,
                                 instanceProcessors);
+                        noOfInstances.incrementAndGet();
                     } else {
                         msgData = null;
                         status = Consts.SW_STAT_SETUP_FAILED;
@@ -188,6 +195,9 @@ public class MPCController {
                     LOG.error("Unsuccessful protocol instance delete: {}", prot.getUID());
                 }
 
+                if (result){
+                    noOfInstances.decrementAndGet();
+                }
                 msgData = new DestroyResponseData(instance);
                 msgData.setDetail();
 
@@ -273,6 +283,24 @@ public class MPCController {
                     msgData.setInstance(prot.getUID());
                     msgData.setSize(prot.getSize());
                     msgData.setDetail(allResult.getL(), allResult.getR());
+
+                    synchronized (lock1) {
+                        // update TPS stats
+
+                        long timeNow = System.currentTimeMillis();
+                        // update every 1000 ms
+                        if ((timeNow - currentTPStime.get()) > 1000) {
+                            LOG.error("TPS reset: {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
+                            currentTPS.set((int)(1000*tps.get()/(timeNow-currentTPStime.get())));
+                            tps.set(1);
+                            currentTPStime.set(timeNow);
+                        } else {
+                            LOG.error("TPS cont : {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
+                            tps.incrementAndGet();
+                        }
+                    }
+
+
                 }
             }
 
@@ -315,6 +343,42 @@ public class MPCController {
         for (String name : runs.keySet()) {
             ird.addInstance(name, runs.get(name));
         }
+
+        msgBack.setResponse(ird);
+        timeStart += System.currentTimeMillis();
+        msgBack.setLatency(timeStart);
+
+        return msgBack;
+    }
+
+    @RequestMapping(value = MPC_PATH + "/stats", method = RequestMethod.POST)
+    public GeneralResponse stats(@RequestBody String jsonStr, HttpServletRequest request) {
+        long timeStart = -System.currentTimeMillis();
+        JsonEnvelope message = null;
+        String remoteIPAddress = request.getRemoteAddr();
+        StatsResponseData ird;
+        GeneralResponse msgBack = null;
+
+        JSONObject parsedContent = new JSONObject(jsonStr);
+
+        int tps_local = 0;
+        synchronized (lock1){
+            // update TPS stats
+            long timeNow = System.currentTimeMillis();
+            // update every 1000 ms
+            tps_local = currentTPS.get();
+            if ((timeNow - currentTPStime.get()) > 1000) {
+                LOG.error("TPS reset 2: {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
+                tps_local = (int)(1000*tps.get()/(timeNow-currentTPStime.get()));
+                currentTPS.set(tps_local);
+                tps.set(0);
+                currentTPStime.set(timeNow);
+            }
+        }
+
+        msgBack = new StatsResponse();
+        ird = new StatsResponseData();
+        ird.addTPS(currentTPS.get());
 
         msgBack.setResponse(ird);
         timeStart += System.currentTimeMillis();

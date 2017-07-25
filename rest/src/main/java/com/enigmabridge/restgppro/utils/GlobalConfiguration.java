@@ -30,6 +30,7 @@ import pro.javacard.gp.GPTool;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GlobalConfiguration {
 
@@ -529,5 +530,10 @@ public class GlobalConfiguration {
     public static HashMap<String, ProtocolInstance> GetInstances() {
 
         return runs;
+    }
+
+    public static HashMap<String,ProtocolInstance> GetStats(AtomicInteger noOfInstances) {
+
+        return null;
     }
 }
