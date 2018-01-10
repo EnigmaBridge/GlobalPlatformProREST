@@ -44,9 +44,9 @@ import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
  */
 @RestController
 @PreAuthorize("hasAuthority('" + ApiConfig.BUSINESS_ROLE + "')")
-public class MPCController {
+public class MPCHWController {
     private static final String template = "Hello, %s!";
-    private static final String MPC_PATH = ApiConfig.API_PATH + "/mpc";
+    private static final String MPCHW_PATH = ApiConfig.API_PATH + "/pool";
     private final AtomicLong counter = new AtomicLong();
     private final AtomicInteger noOfInstances = new AtomicInteger(0);
     private final AtomicInteger tps = new AtomicInteger(0);
@@ -54,14 +54,14 @@ public class MPCController {
     private final AtomicLong currentTPStime = new AtomicLong(0);
     Object lock1 = new Object();
 
-    @RequestMapping(MPC_PATH + "/greeting")
+    @RequestMapping(MPCHW_PATH + "/greeting")
     public Greeting greeting(@RequestParam(value = "name", defaultValue = "World") String name) {
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
     }
 
 
-    @RequestMapping(MPC_PATH + "/inventory")
+    @RequestMapping(MPCHW_PATH + "/inventory")
     public GeneralResponse inventory(HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
@@ -92,7 +92,7 @@ public class MPCController {
     }
 
 
-    @RequestMapping(value = MPC_PATH + "/create", method = RequestMethod.POST)
+    @RequestMapping(value = MPCHW_PATH + "/allocate", method = RequestMethod.POST)
     public GeneralResponse create(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
@@ -123,7 +123,7 @@ public class MPCController {
                     msgData.setDetail((test < 0) ? 0 : test, size, protocol,
                             null);
                 } else {
-                    String password = "password";
+                    String password = "password"; //TODO replace with a random string
                     ProtocolInstance prot = new ProtocolInstance();
                     prot.setUID(protocolInstanceUID);
                     prot.setProcessors(size);
@@ -174,7 +174,7 @@ public class MPCController {
     }
 
 
-    @RequestMapping(value = MPC_PATH + "/destroy", method = RequestMethod.POST)
+    @RequestMapping(value = MPCHW_PATH + "/destroy", method = RequestMethod.POST)
     public GeneralResponse destroy(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = System.currentTimeMillis();
         JsonEnvelope message = null;
@@ -195,7 +195,7 @@ public class MPCController {
                     LOG.error("Unsuccessful protocol instance delete: {}", prot.getUID());
                 }
 
-                if (result) {
+                if (result){
                     noOfInstances.decrementAndGet();
                 }
                 msgData = new DestroyResponseData(instance);
@@ -224,7 +224,7 @@ public class MPCController {
         return msgBack;
     }
 
-    @RequestMapping(value = MPC_PATH + "/run", method = RequestMethod.POST)
+    @RequestMapping(value = MPCHW_PATH + "/run", method = RequestMethod.POST)
     public GeneralResponse run(@RequestBody String jsonStr, HttpServletRequest request) {
         JsonEnvelope message = null;
         Long timeStart = System.currentTimeMillis();
@@ -290,12 +290,12 @@ public class MPCController {
                         long timeNow = System.currentTimeMillis();
                         // update every 1000 ms
                         if ((timeNow - currentTPStime.get()) > 1000) {
-                            LOG.error("TPS reset: {} {} {}", timeNow - currentTPStime.get(), tps.get(), currentTPS.get());
-                            currentTPS.set((int) (1000 * tps.get() / (timeNow - currentTPStime.get())));
+                            LOG.error("TPS reset: {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
+                            currentTPS.set((int)(1000*tps.get()/(timeNow-currentTPStime.get())));
                             tps.set(1);
                             currentTPStime.set(timeNow);
                         } else {
-                            LOG.error("TPS cont : {} {} {}", timeNow - currentTPStime.get(), tps.get(), currentTPS.get());
+                            LOG.error("TPS cont : {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
                             tps.incrementAndGet();
                         }
                     }
@@ -326,7 +326,7 @@ public class MPCController {
     }
 
 
-    @RequestMapping(value = MPC_PATH + "/instances", method = RequestMethod.POST)
+    @RequestMapping(value = MPCHW_PATH + "/instances", method = RequestMethod.POST)
     public GeneralResponse instances(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = -System.currentTimeMillis();
         JsonEnvelope message = null;
@@ -351,7 +351,7 @@ public class MPCController {
         return msgBack;
     }
 
-    @RequestMapping(value = MPC_PATH + "/stats", method = RequestMethod.POST)
+    @RequestMapping(value = MPCHW_PATH + "/stats", method = RequestMethod.POST)
     public GeneralResponse stats(@RequestBody String jsonStr, HttpServletRequest request) {
         long timeStart = -System.currentTimeMillis();
         JsonEnvelope message = null;
@@ -362,14 +362,14 @@ public class MPCController {
         JSONObject parsedContent = new JSONObject(jsonStr);
 
         int tps_local = 0;
-        synchronized (lock1) {
+        synchronized (lock1){
             // update TPS stats
             long timeNow = System.currentTimeMillis();
             // update every 1000 ms
             tps_local = currentTPS.get();
             if ((timeNow - currentTPStime.get()) > 1000) {
-                LOG.error("TPS reset 2: {} {} {}", timeNow - currentTPStime.get(), tps.get(), currentTPS.get());
-                tps_local = (int) (1000 * tps.get() / (timeNow - currentTPStime.get()));
+                LOG.error("TPS reset 2: {} {} {}", timeNow-currentTPStime.get(), tps.get(), currentTPS.get());
+                tps_local = (int)(1000*tps.get()/(timeNow-currentTPStime.get()));
                 currentTPS.set(tps_local);
                 tps.set(0);
                 currentTPStime.set(timeNow);
@@ -383,93 +383,6 @@ public class MPCController {
         msgBack.setResponse(ird);
         timeStart += System.currentTimeMillis();
         msgBack.setLatency(timeStart);
-
-        return msgBack;
-    }
-
-
-    @RequestMapping(value = MPC_PATH + "/evil", method = RequestMethod.POST)
-    public GeneralResponse evil(@RequestBody String jsonStr, HttpServletRequest request) {
-        long timeStart = -System.currentTimeMillis();
-        JsonEnvelope message = null;
-        String remoteIPAddress = request.getRemoteAddr();
-        StatsResponseData ird;
-        GeneralResponse msgBack = null;
-        int status = Consts.SW_STAT_OK;
-        RunResponseData msgData = null;
-
-        try {
-            msgBack = new RunResponse();
-            JSONObject parsedContent = new JSONObject(jsonStr);
-
-            String instance = parsedContent.getString("instance");
-            String phase = parsedContent.getString("phase");
-            String protocolName = parsedContent.getString("protocol");
-
-            HashMap<String, String> params = new HashMap<>();
-            ProtocolInstance prot = GlobalConfiguration.isInstance(instance);
-
-            if (prot != null) {
-                if (!parsedContent.isNull("input")) {
-                    JSONArray parameters = parsedContent.getJSONArray("input");
-                    for (Object oneParam : parameters) {
-                        if (oneParam instanceof JSONObject) {
-                            JSONObject oneParamJSON = (JSONObject) oneParam;
-                            String name = "@" + oneParamJSON.getString("name");
-                            String value = oneParamJSON.getString("value");
-                            prot.addParameter(name, value);
-                        } else {
-                            LOG.error("Input parameters not valid: {}", oneParam);
-                        }
-                    }
-                }
-
-                String name = "@processors";
-                String value = Integer.toHexString(prot.getCardKeys().size());
-                if ((value.length() % 2) == 1) {
-                    value = "0" + value;
-                }
-                prot.addParameter(name, value);
-            }
-            if (!GlobalConfiguration.isProtocol(protocolName) || (prot == null)) {
-                msgBack.setError("Protocol not known");
-                status = Consts.SW_STAT_UNKNOWN_INSTANCE;
-            } else if (!GlobalConfiguration.isPhase(protocolName, phase)) {
-                msgBack.setError("Protocol phase not known");
-                status = Consts.SW_STAT_UNKNOWN_PHASE;
-            } else {
-                ProtocolDefinition.Phase detail = GlobalConfiguration.getPhase(protocolName, phase);
-                Pair<HashMap<String, String[][]>, HashMap<String, Long[][]>> allResult = prot.runPhase(phase, detail);
-
-                if (allResult == null) {
-                    msgBack.setError("Protocol phase not known");
-                    status = Consts.SW_STAT_UNKNOWN_PHASE;
-                } else {
-                    msgData = new RunResponseData();
-                    msgData.setProtocol(prot.getProtocolName());
-                    msgData.setInstance(prot.getUID());
-                    msgData.setSize(prot.getSize());
-                    msgData.setDetail(allResult.getL(), allResult.getR());
-                }
-            }
-
-
-        } catch (Exception ex) {
-            status = Consts.SW_STAT_INPUT_PARSE_FAIL;
-            msgBack.setError(ex.getMessage());
-
-        } finally {
-            if (msgBack == null) {
-                msgBack = new RunResponse();
-                status = Consts.SW_STAT_PROCESSING_ERROR;
-            }
-
-            msgBack.setStatus(status);
-            msgBack.setResponse(msgData);
-            long elapsedTime = System.currentTimeMillis() - timeStart;
-            msgBack.setLatency(elapsedTime);
-            //msgBack.setLatency(elapsedTime);
-        }
 
         return msgBack;
     }

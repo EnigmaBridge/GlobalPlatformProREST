@@ -43,6 +43,8 @@ import static com.enigmabridge.restgppro.utils.GlobalConfiguration.LOG;
  * Created by Enigma Bridge Ltd (dan) on 20/01/2017.
  */
 public class ProtocolInstance {
+
+    static Long INIT_TIMEOUT_MS = Long.valueOf(600);
     //public ExecutorCompletionService<String> completionService;
     public ThreadPoolExecutor executor;
     public LinkedBlockingDeque queue;
@@ -59,6 +61,8 @@ public class ProtocolInstance {
     private int lastCardID = 0;
     private String AID;
     private ProtocolDefinition protocol = null;
+    private Long timeCreate = System.currentTimeMillis();
+    private Long timeInitialized = null;
 
 
     public ProtocolInstance() {
@@ -393,6 +397,16 @@ public class ProtocolInstance {
                             arrayIndex += 1;
                         }
                     }
+                } else if (oneStep.from.equals("@target")) {
+                    if (this.parameters.get("@processor").equalsIgnoreCase(player.getL().getReader())) {
+                        LOG.error("Evil card now: {}", player.getL().getReader());
+
+                        apduArray = new String[1];
+                        apduArray[0] = CreateAPDU(player, ins, -1);
+                    } else {
+                        LOG.error("Evil card now NOT:{} {}", this.parameters.get("@processor"), player.getL().getReader());
+                        continue;
+                    }
                 } else {
                     apduArray = new String[1];
                     apduArray[0] = CreateAPDU(player, ins, -1);
@@ -436,6 +450,9 @@ public class ProtocolInstance {
                             LOG.error("Error executing APDU command {} {}", value.GetStatus(index), value.GetApplet().getReader(), value.GetAPDU(index));
                         }
                     }
+                }
+                if (apduThreads.size()==0){
+                    LOG.error("Error executing phase {}", phase);
                 }
             } catch (InterruptedException e) {
                 LOG.error("Processing timeout: {}", oneStep.apdu);

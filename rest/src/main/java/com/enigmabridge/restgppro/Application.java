@@ -153,17 +153,7 @@ public class Application implements CommandLineRunner {
                             String p1 = ((JSONObject) apdu).getString("p1");
                             String p2 = ((JSONObject) apdu).getString("p2");
                             lastTag = name;
-                            String data;
-                            if (((JSONObject) apdu).isNull("data")) {
-                                data = null;
-                            } else {
-                                data = ((JSONObject) apdu).getString("data");
-                                if (data.startsWith("@")) {
-                                    if (!prot.addData(data)) {
-                                        LOG.error("Data in the protocol is not known: {}", data);
-                                    }
-                                }
-                            }
+
                             String result;
                             if (((JSONObject) apdu).isNull("result")) {
                                 result = null;
@@ -175,6 +165,19 @@ public class Application implements CommandLineRunner {
                                     LOG.info("A result of APDU is not a name {} {}", name, result);
                                 }
                             }
+
+                            String data;
+                            if (((JSONObject) apdu).isNull("data")) {
+                                data = null;
+                            } else {
+                                data = ((JSONObject) apdu).getString("data");
+                                if (data.startsWith("@")) {
+                                    if (!prot.addData(data)) {
+                                        LOG.error("Data in the protocol is not known: {}", data);
+                                    }
+                                }
+                            }
+
                             prot.addInstruction(name, cla, ins, p1, p2, data, result);
 
                         }

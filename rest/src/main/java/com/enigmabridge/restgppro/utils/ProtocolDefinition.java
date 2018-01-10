@@ -43,10 +43,11 @@ public class ProtocolDefinition {
     public ProtocolDefinition() {
         parties.put("@server", 1);
         parties.put("@worker", 0);
-        apduData.add("src");
-        apduData.add("dst");
-        apduResult.add("src");
-        apduResult.add("dst");
+        parties.put("@target", 2);
+        apduData.add("@src");
+        apduData.add("@dst");
+        apduResult.add("@src");
+        apduResult.add("@dst");
     }
 
     public boolean isParty(String namein) {
@@ -101,7 +102,7 @@ public class ProtocolDefinition {
             return false;
         }
         if (p1.startsWith("@")) {
-            apduData.add(p1);
+            addData(p1);
             instruction.p1 = p1;
         } else if ((p1.length() == 2) && (p1.matches("\\p{XDigit}+"))) {
             instruction.p1 = p1;
@@ -109,7 +110,7 @@ public class ProtocolDefinition {
             return false;
         }
         if (p2.startsWith("@")) {
-            apduData.add(p2);
+            addData(p2);
             instruction.p2 = p2;
         } else if ((p2.length() == 2) && (p2.matches("\\p{XDigit}+"))) {
             instruction.p2 = p2;
@@ -119,7 +120,7 @@ public class ProtocolDefinition {
         if (datain == null) {
             instruction.data = null;
         } else if (datain.startsWith("@")) {
-            apduData.add(datain);
+            addData(datain);
             instruction.data = datain;
         } else if ((datain.length() == 2) && (datain.matches("\\p{XDigit}+"))) {
             instruction.data = datain;

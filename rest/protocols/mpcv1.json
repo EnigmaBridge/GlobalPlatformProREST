@@ -134,10 +134,10 @@
         "name":"INS_SIGN_RETRIEVE_RI",
         "cla": "B0",  
         "ins": "75",   
-        "p1": "@j0",
+        "p1": "00",
         "p2": "00",
         "data": null,
-        "result": "@sum_ri"
+        "result": "@signri"
     },
     {
         "name":"INS_SIGN_RETRIEVE_R",
@@ -152,10 +152,28 @@
         "name":"INS_SIGN",
         "cla": "B0",  
         "ins": "79",   
-        "p1": "@j0",
+        "p1": "00",
         "p2": "00",
-        "data": "@signplaintext@sum_ri",
+        "data": "@signplaintext",
         "result": "@signature"
+    },
+    {
+	"name":"INS_EVIL_ON",
+	"cla":"B0",
+	"ins":"05",
+	"p1": "55",
+	"p2": "00",
+	"data": null,
+        "result":"@evilon"
+    },
+    {
+	"name":"INS_EVIL_OFF",
+	"cla":"B0",
+	"ins":"05",
+	"p1": "00",
+	"p2": "00",
+	"data": null,
+        "result":"@eviloff"
     }
     ],
     "create":"INS_SETUP",
@@ -224,12 +242,56 @@
         "result":"@decrypt"
     },
     {
-        "name":"sign",
-        "input":["@processors","@j0","@j1","@signplaintext"],
+        "name":"evilon",
+        "input":["@processor"],
         "apdus":[
+            {
+            "apdu":"INS_EVIL_ON",
+            "from":"@target",
+            "to":"@server"
+            }
+       ],
+        "result":"@evilon"
+    },
+    {
+        "name":"eviloff",
+        "input":["@processor"],
+        "apdus":[
+            {
+            "apdu":"INS_EVIL_OFF",
+            "from":"@target",
+            "to":"@server"
+            }
+       ],
+        "result":"@eviloff"
+    },
+    {
+        "name":"sign",
+        "input":["@processors","@signplaintext"],
+        "apdus":[
+            {
+            "apdu":"INS_SIGN_INIT",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_RETRIEVE_HASH",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_STORE_HASH",
+            "from":"@worker",
+            "to":"@worker"
+            },
             {
             "apdu":"INS_SIGN_RETRIEVE_RI",
             "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_STORE_RI",
+            "from":"@worker",
             "to":"@worker"
             },
             {
