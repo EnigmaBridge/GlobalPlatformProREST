@@ -20,27 +20,11 @@
  */
 package pro.javacard.gp;
 
-import java.io.*;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-
-import javax.smartcardio.Card;
-import javax.smartcardio.CardException;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CardTerminals;
-import javax.smartcardio.CardTerminals.State;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.TerminalFactory;
-
-import com.google.common.base.Joiner;
-
 import apdu4j.APDUReplayProvider;
 import apdu4j.HexUtils;
 import apdu4j.LoggingCardTerminal;
 import apdu4j.TerminalManager;
+import com.google.common.base.Joiner;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -53,6 +37,15 @@ import pro.javacard.gp.GPRegistryEntry.Privilege;
 import pro.javacard.gp.GPRegistryEntry.Privileges;
 import pro.javacard.gp.GlobalPlatform.APDUMode;
 import pro.javacard.gp.GlobalPlatform.GPSpec;
+
+import javax.smartcardio.*;
+import javax.smartcardio.CardTerminals.State;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 
 
 public final class GPTool {
@@ -113,7 +106,10 @@ public final class GPTool {
 	private final static String OPT_VISA2 = "visa2";
 
 	protected PrintStream out = System.out;
-	protected PrintStream err = System.err;
+	private PrintStream err = System.err;
+	private Card card = null;
+	private GlobalPlatform gp = null;
+	private List<CardTerminal> do_readers;
 
 	public GPTool() {
 	}
@@ -123,7 +119,7 @@ public final class GPTool {
 		this.err = err;
 	}
 
-	public static OptionParser setupParser(){
+	private static OptionParser setupParser(){
 		final OptionParser parser = new OptionParser();
 
 		// Generic options
@@ -208,7 +204,7 @@ public final class GPTool {
 		return parseArguments(argv, System.out, System.err);
 	}
 
-	public static OptionSet parseArguments(String[] argv, PrintStream out, PrintStream err) throws IOException {
+	private static OptionSet parseArguments(String[] argv, PrintStream out, PrintStream err) throws IOException {
 		OptionSet args = null;
 		final OptionParser parser = setupParser();
 
@@ -242,7 +238,14 @@ public final class GPTool {
 		return work(args);
 	}
 
-	public int work(OptionSet args) throws IOException, NoSuchAlgorithmException {
+	public int work(String[] argv, PrintStream out, PrintStream err) throws IOException, NoSuchAlgorithmException {
+		this.out = out;
+		this.err = err;
+		final OptionSet args = parseArguments(argv, this.out, this.err);
+		return work(args);
+	}
+
+	private int work(OptionSet args) throws IOException, NoSuchAlgorithmException {
 		if (args == null){
 			return -2;
 		}
@@ -350,45 +353,58 @@ public final class GPTool {
 		try {
 			final TerminalFactory tf;
 
-			if (args.has(OPT_REPLAY)) {
-				// Replay responses from a file
-				// FIXME: use the generic provider interface and drop command line options
-				File f = (File) args.valueOf(OPT_REPLAY);
-				tf = TerminalFactory.getInstance("PC/SC", new FileInputStream(f), new APDUReplayProvider());
-			} else {
-				tf = TerminalManager.getTerminalFactory((String)args.valueOf(OPT_TERMINALS));
-			}
-
-			CardTerminals terminals = tf.terminals();
-
-			// List terminals if needed
-			if (args.has(OPT_DEBUG)) {
-				out.println("# Detected readers from " + tf.getProvider().getName());
-				for (CardTerminal term : terminals.list()) {
-					out.println((term.isCardPresent() ? "[*] " : "[ ] ") + term.getName());
+			if (this.card == null) {
+				// this.card and tis.do_readers are persistent for the object instance
+				// once this initialized, we don't need to do the enumeration again
+				if (args.has(OPT_REPLAY)) {
+					// Replay responses from a file
+					// FIXME: use the generic provider interface and drop command line options
+					File f = (File) args.valueOf(OPT_REPLAY);
+					tf = TerminalFactory.getInstance("PC/SC", new FileInputStream(f), new APDUReplayProvider());
+				} else {
+					tf = TerminalManager.getTerminalFactory((String) args.valueOf(OPT_TERMINALS));
 				}
-			}
 
-			// Select terminal(s) to work on
-			List<CardTerminal> do_readers;
-			if (args.has(OPT_READER) || System.getenv("GP_READER") != null) {
-				String reader = System.getenv("GP_READER");
-				if (args.has(OPT_READER))
-					reader = (String) args.valueOf(OPT_READER);
-				CardTerminal t = terminals.getTerminal(reader);
-				if (t == null) {
-					fail("Reader \"" + reader + "\" not found.");
+				CardTerminals terminals = tf.terminals();
+
+				// List terminals if needed
+				if (args.has(OPT_DEBUG)) {
+					out.println("# Detected readers from " + tf.getProvider().getName());
+					for (CardTerminal term : terminals.list()) {
+						out.println((term.isCardPresent() ? "[*] " : "[ ] ") + term.getName());
+					}
+				}
+
+				// Select terminal(s) to work on - skipped if we already have done it
+				if (args.has(OPT_READER) || System.getenv("GP_READER") != null) {
+					String reader = System.getenv("GP_READER");
+					if (args.has(OPT_READER))
+						reader = (String) args.valueOf(OPT_READER);
+					CardTerminal t = terminals.getTerminal(reader);
+					if (t == null) {
+						fail("Reader \"" + reader + "\" not found.");
+						return 1;
+					}
+					do_readers = Arrays.asList(t);
+				} else {
+					do_readers = terminals.list(State.CARD_PRESENT);
+				}
+
+				if (do_readers.size() == 0) {
+					fail("No smart card readers with a card found");
 					return 1;
 				}
-				do_readers = Arrays.asList(t);
 			} else {
-				do_readers = terminals.list(State.CARD_PRESENT);
+				// List terminals if needed - as a repeated printout - at the moment only
+				// card present terminals
+				if (args.has(OPT_DEBUG)) {
+					out.println("# Readers with smartcards:");
+					for (CardTerminal term : do_readers) {
+						out.println((term.isCardPresent() ? "[*] " : "[ ] ") + term.getName());
+					}
+				}
 			}
 
-			if (do_readers.size() == 0) {
-				fail("No smart card readers with a card found");
-				return 1;
-			}
 			// Work all readers
 			for (CardTerminal reader: do_readers) {
 				if (do_readers.size() > 1) {
@@ -401,25 +417,30 @@ public final class GPTool {
 					if (args.has(OPT_DUMP)) {
 						File f = (File) args.valueOf(OPT_DUMP);
 						o = new FileOutputStream(f);
+					} else {
+						o = this.out;
 					}
 					reader = LoggingCardTerminal.getInstance(reader, o);
 				}
 
-				Card card = null;
+				boolean connectingCard = false;
 				try {
 					// Establish connection
-					try {
-						card = reader.connect("*");
-						// Use use apdu4j which by default uses jnasmartcardio
-						// which uses real SCardBeginTransaction
-						card.beginExclusive();
-					} catch (CardException e) {
-						err.println("Could not connect to " + reader.getName() + ": " + TerminalManager.getExceptionMessage(e));
-						continue;
-					}
+					if (card == null) {
+						connectingCard = true;
+						try {
+							card = reader.connect("*");
+							// Use use apdu4j which by default uses jnasmartcardio
+							// which uses real SCardBeginTransaction
+							card.beginExclusive();
+						} catch (CardException e) {
+							err.println("Could not connect to " + reader.getName() + ": " + TerminalManager.getExceptionMessage(e));
+							continue;
+						}
+						// GlobalPlatform specific
+						gp = new GlobalPlatform(card.getBasicChannel());
 
-					// GlobalPlatform specific
-					GlobalPlatform gp = new GlobalPlatform(card.getBasicChannel());
+					}
 
 					if (args.has(OPT_OP201)) {
 						gp.setSpec(GPSpec.OP201);
@@ -441,6 +462,11 @@ public final class GPTool {
 						out.println();
 					}
 
+					if (connectingCard) {
+						// Talk to the card manager (can be null)
+						gp.select((AID) args.valueOf(OPT_SDAID));
+					}
+
 					// Send all raw APDU-s to the default-selected application of the card
 					if (args.has(OPT_APDU)) {
 						for (Object s: args.valuesOf(OPT_APDU)) {
@@ -448,9 +474,6 @@ public final class GPTool {
 							card.getBasicChannel().transmit(c);
 						}
 					}
-
-					// Talk to the card manager (can be null)
-					gp.select((AID) args.valueOf(OPT_SDAID));
 
 					// Fetch some possibly interesting data
 					if (args.has(OPT_INFO)) {
@@ -820,11 +843,11 @@ public final class GPTool {
 					// Card exceptions skip to the next reader, if available and allowed FIXME broken logic
 					continue;
 				} finally {
-					if (card != null) {
-						card.endExclusive();
-						card.disconnect(true);
-						card = null;
-					}
+//					if (card != null) {
+//						card.endExclusive();
+//						card.disconnect(true);
+//						card = null;
+//					}
 				}
 			}
 		} catch (CardException e) {
@@ -841,13 +864,23 @@ public final class GPTool {
 		return 0;
 	}
 
+	public void close() throws CardException {
+
+		if (this.card != null) {
+			card.endExclusive();
+			card.disconnect(true);
+			card = null;
+		}
+	}
+
 	public static void main(String[] argv) throws Exception {
 		final GPTool tool = new GPTool();
 		final int returnCode = tool.work(argv);
+		tool.close();
 		System.exit(returnCode);
 	}
 
-	protected void fail(String msg) {
+	private void fail(String msg) {
 		err.println(msg);
 	}
 

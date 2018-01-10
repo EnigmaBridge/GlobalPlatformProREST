@@ -1,0 +1,14 @@
+{ 
+    "readers":{
+        "use": true, 
+        "list":["name"], 
+        "smartcardio":null
+    }, 
+    "simonas":{
+        "scan":true, 
+        "addresses":["+84.92.209.143", "192.168.42.10"], 
+        "smartcardio":"../libs/simonasmartcardio.jar:smarthsmfast.simona.Simonaio:bin%40tcp%3A%2F%2F",
+    },
+    "protocolfolder":"./protocols", 
+    "instancefolder":"./instances"
+}

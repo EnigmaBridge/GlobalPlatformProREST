@@ -28,8 +28,8 @@ package com.enigmabridge.restgppro;
  * Created by dusanklinec on 01.08.16.
  */
 public class ApiConfig {
-    public static final int UMG_CURRENT_API_VERSION = 1;
-    public static final String API_PATH = "/api/v" + UMG_CURRENT_API_VERSION;
+    public static final int CURRENT_API_VERSION = 1;
+    public static final String API_PATH = "/api/v" + CURRENT_API_VERSION;
 
     public static final String AUTHENTICATE_URL = API_PATH + "/authenticate";
     public static final String UO_EVENT_URL = API_PATH + "/evt/uo";

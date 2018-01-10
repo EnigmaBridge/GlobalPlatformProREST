@@ -21,16 +21,6 @@ repositories {
     }
 }
 
-jar {
-    baseName = 'gppro-rest'
-    version =  '0.1.0'
-}
-
-war {
-    baseName = 'gppro-rest'
-    version =  '0.1.0'
-}
-
 dependencies {
     compile 'ch.qos.logback:logback-classic:1.1.3'
     compile 'ch.qos.logback:logback-core:1.1.3'
@@ -38,6 +28,7 @@ dependencies {
     compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.json:json:20160212'
 
     // GPPro dependency
     compile project(':gppro')
@@ -49,6 +40,7 @@ dependencies {
 
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 }
+
 
 // Gretty Embedded Jetty
 buildscript {
@@ -62,6 +54,23 @@ buildscript {
         classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.3.6.RELEASE'
     }
 }
+
+
+jar {
+    baseName = 'gppro-rest'
+    version =  '0.1.0'
+    manifest {
+        attributes(
+                "Class-Path": configurations.compile.collect { it.getName() }.join(' '))
+    }
+
+}
+
+war {
+    baseName = 'gppro-rest'
+    version =  '0.1.0'
+}
+
 
 // Don't use Jetty8, even it's a servlet 3.0+ container,
 // but not support non-jar WebApplicationInitializer scanning.

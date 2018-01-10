@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pro.javacard.gp.GPArgumentTokenizer;
 import pro.javacard.gp.GPTool;
 
+import javax.smartcardio.CardException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -42,7 +43,7 @@ import static com.enigmabridge.restgppro.ApiConfig.API_PATH;
  * Created by dusanklinec on 20.07.16.
  */
 @RestController
-@PreAuthorize("hasAuthority('" + ApiConfig.BUSINESS_ROLE + "')")
+@PreAuthorize("hasAuthority('" + ApiConfig.MANAGEMENT_ROLE + "')")
 public class GPController {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
@@ -59,6 +60,10 @@ public class GPController {
         final GPTool tool = new GPTool(ps, ps);
         final List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+        try {
+            tool.close();
+        } catch (CardException ignored) {
+        }
         ps.println("Done: " + code);
     }
 }

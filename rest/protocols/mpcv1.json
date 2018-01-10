@@ -1,0 +1,308 @@
+{
+    "protocol":"MPCv1",
+    "processors":4,
+    "names": null,
+    "aid": "4d50434170706c657431",
+    "apdu":[
+    {
+        "name":"INS_SETUP",
+        "cla": "B0",  
+        "ins": "01",  
+        "p1": "@processors",
+        "p2": "@dst",
+        "data": null,
+        "result": null
+    },
+    {
+        "name":"INS_RESET",
+        "cla": "B0",  
+        "ins": "03",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": null
+    },
+    {
+        "name":"INS_KEYGEN_INIT",
+        "cla": "B0",  
+        "ins": "10",   
+        "p1": "@processors",
+        "p2": "@dst",
+        "data": null,
+        "result": null
+    },
+    {
+        "name":"INS_KEYGEN_RETRIEVE_HASH",
+        "cla": "B0",          
+        "ins": "11",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@hash"
+    },
+    {
+        "name":"INS_KEYGEN_STORE_HASH",
+        "cla": "B0",  
+        "ins": "12",   
+        "p1": "@src",
+        "p2": "00",
+        "data": "@hash", 
+        "result": null
+    },
+    {
+        "name":"INS_KEYGEN_STORE_PUBKEY",
+        "cla": "B0",  
+        "ins": "13",  
+        "p1": "@src",
+        "p2": "00",
+        "data": "@pubkey",
+        "result": null
+    },
+    {
+        "name":"INS_KEYGEN_RETRIEVE_PUBKEY",
+        "cla": "B0",  
+        "ins": "14",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@pubkey"
+    },
+    {
+        "name":"INS_KEYGEN_RETRIEVE_AGG_PUBKEY",
+        "cla": "B0",  
+        "ins": "16",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@aggkey"
+    },
+    {
+        "name":"INS_ENCRYPT",
+        "cla": "B0",  
+        "ins": "50",  
+        "p1": "00",
+        "p2": "00",
+        "data": "@enplaintext",
+        "result": "@encryption"
+    },
+    {
+        "name":"INS_DECRYPT",
+        "cla": "B0",  
+        "ins": "51",   
+        "p1": "00",
+        "p2": "00",
+        "data": "@ciphertext",
+        "result": "@decrypt"
+    },
+    {
+        "name":"INS_SIGN_INIT",
+        "cla": "B0",  
+        "ins": "70",   
+        "p1": "@processors",
+        "p2": "@dst",
+        "data": null,
+        "result": null
+    },
+    {
+        "name":"INS_SIGN_RETRIEVE_HASH",
+        "cla": "B0",  
+        "ins": "71",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@signhash"
+    },
+    {
+        "name":"INS_SIGN_STORE_HASH",
+        "cla": "B0",  
+        "ins": "72",   
+        "p1": "@src",
+        "p2": "00",
+        "data": "@signhash", 
+        "result": null
+    },
+    {
+        "name":"INS_SIGN_STORE_RI",
+        "cla": "B0",  
+        "ins": "73",  
+        "p1": "@src",
+        "p2": "00",
+        "data": "@signri", 
+        "result": null
+    },
+    {
+        "name":"INS_SIGN_RETRIEVE_RI",
+        "cla": "B0",  
+        "ins": "75",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@signri"
+    },
+    {
+        "name":"INS_SIGN_RETRIEVE_R",
+        "cla": "B0",  
+        "ins": "78",   
+        "p1": "00",
+        "p2": "00",
+        "data": null,
+        "result": "@signr"
+    },
+    {
+        "name":"INS_SIGN",
+        "cla": "B0",  
+        "ins": "79",   
+        "p1": "00",
+        "p2": "00",
+        "data": "@signplaintext",
+        "result": "@signature"
+    },
+    {
+	"name":"INS_EVIL_ON",
+	"cla":"B0",
+	"ins":"05",
+	"p1": "55",
+	"p2": "00",
+	"data": null,
+        "result":"@evilon"
+    },
+    {
+	"name":"INS_EVIL_OFF",
+	"cla":"B0",
+	"ins":"05",
+	"p1": "00",
+	"p2": "00",
+	"data": null,
+        "result":"@eviloff"
+    }
+    ],
+    "create":"INS_SETUP",
+    "destroy":"INS_RESET",
+    "phases":[
+    {
+        "name":"keygen",
+        "input":["@processors"],
+        "apdus":[
+            {
+            "apdu":"INS_KEYGEN_INIT",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_KEYGEN_RETRIEVE_HASH",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_KEYGEN_STORE_HASH",
+            "from":"@worker",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_KEYGEN_RETRIEVE_PUBKEY",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_KEYGEN_STORE_PUBKEY",
+            "from":"@worker",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_KEYGEN_RETRIEVE_AGG_PUBKEY",
+            "from":"@server",
+            "to":"@worker",
+            "result":"@aggkey"
+            }
+        ],
+        "result":"@aggkey"
+    },
+    {
+        "name":"encrypt",
+        "input":["@enplaintext"],
+        "apdus":[
+            {
+            "apdu":"INS_ENCRYPT",
+            "from":"@server",
+            "to":"@worker"
+            }
+       ],
+        "result":"@encryption"
+    },
+    {
+        "name":"decrypt",
+        "input":["@ciphertext"],
+        "apdus":[
+            {
+            "apdu":"INS_DECRYPT",
+            "from":"@server",
+            "to":"@worker"
+            }
+       ],
+        "result":"@decrypt"
+    },
+    {
+        "name":"evilon",
+        "input":["@processor"],
+        "apdus":[
+            {
+            "apdu":"INS_EVIL_ON",
+            "from":"@target",
+            "to":"@server"
+            }
+       ],
+        "result":"@evilon"
+    },
+    {
+        "name":"eviloff",
+        "input":["@processor"],
+        "apdus":[
+            {
+            "apdu":"INS_EVIL_OFF",
+            "from":"@target",
+            "to":"@server"
+            }
+       ],
+        "result":"@eviloff"
+    },
+    {
+        "name":"sign",
+        "input":["@processors","@signplaintext"],
+        "apdus":[
+            {
+            "apdu":"INS_SIGN_INIT",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_RETRIEVE_HASH",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_STORE_HASH",
+            "from":"@worker",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_RETRIEVE_RI",
+            "from":"@server",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN_STORE_RI",
+            "from":"@worker",
+            "to":"@worker"
+            },
+            {
+            "apdu":"INS_SIGN",
+            "from":"@server",
+            "to":"@worker",
+            "result":"@signature"
+            }
+        ],
+        "result":"@signature"
+    } 
+    ]
+}
+
