@@ -5,20 +5,6 @@ spring:
     #username:
     #password:
 
-#    url: jdbc:mysql://localhost:3306/umgmt?autoReconnect=true&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;rewriteBatchedStatements=true
-#    username: mpc
-#    password: mpc
-
-# Keep the connection alive if idle for a long time (needed in production)
-#    testWhileIdle: true
-#    validationQuery: SELECT 1
-
-#spring:
-#  jpa:
-#    properties:
-#      hibernate:
-#        dialect: org.hibernate.dialect.MySQLDialect
-
 security:
   basic:
     enabled: false
@@ -31,7 +17,8 @@ logging:
 server:
   port: 8081
   session-timeout: 60
-  protocol: http
+  protocol: http   #http or https
+  
 
 # Authentication tokens for API access.
 auth:
