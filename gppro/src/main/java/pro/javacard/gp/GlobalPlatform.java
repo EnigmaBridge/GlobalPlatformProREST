@@ -225,7 +225,11 @@ public class GlobalPlatform {
 		if (resp.getSW() == 0x9000 || resp.getSW() == 0x6283) {
 			// The security domain AID is in FCI.
 			byte[] fci = resp.getData();
-			parse_select_response(fci);
+			try {
+				parse_select_response(fci);
+			} catch (Exception ignore){
+				// we've added this to catch an empty information with card content (PKG/AIDs)
+			}
 			return true;
 		}
 		return false;
