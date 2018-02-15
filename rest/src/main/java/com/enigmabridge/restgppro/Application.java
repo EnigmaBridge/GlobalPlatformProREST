@@ -412,7 +412,7 @@ public class Application implements CommandLineRunner {
                 String readerCmd = commandLine + simona + " -r ";
                 for (String reader : GlobalConfiguration.getSimonaReaders(simona)) {
                     // cmd = javacmd + "-d -l --dump " + filename + " -r " + self.card + " -v"
-                    RunnableListApplets oneSC = new RunnableListApplets(reader, readerCmd);
+                    RunnableListApplets oneSC = new RunnableListApplets(reader, readerCmd, simona);
                     executor.execute(oneSC);
                 }
             }
@@ -482,9 +482,15 @@ public class Application implements CommandLineRunner {
                 tool = new GPTool(psout, pserr);
                 inputArgs = GPArgumentTokenizer.tokenize(request);
                 try {
+                    boolean allGood = false;
+                    try {
                     final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
-                    tool.close();
+                        allGood = true;
+                    } catch (IllegalStateException ignored) {
+                        allGood = true;
+                    }
 
+                    if (allGood) {
                     // lets' now parse the output
                     String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
                     for (String line : outputLines) {
@@ -494,6 +500,14 @@ public class Application implements CommandLineRunner {
                             if (!lineParts[1].trim().startsWith("A000")) {
                                 GlobalConfiguration.addApplet(reader, lineParts[1].trim(), appletStatus);
                             }
+                        }
+                            if (lineParts[0].equalsIgnoreCase("# ATR")) {
+                                //first get the IP address
+
+                                // we add the card into the list of active cards - even if there's not applet present
+                                GlobalConfiguration.addSmartcard(reader, null, lineParts[1]);
+                            }
+
                         }
                     }
                 } catch (Exception e) {

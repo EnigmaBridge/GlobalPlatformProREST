@@ -35,10 +35,12 @@ import java.util.List;
 public class RunnableListApplets implements Runnable {
     private String m_reader;
     private String m_cmd;
+    private String m_simonaIP;
 
-    public RunnableListApplets(String reader, String cmd) {
+    public RunnableListApplets(String reader, String cmd, String ipAddress) {
         m_reader = reader;
         m_cmd = cmd;
+        m_simonaIP = ipAddress;
 
     }
 
@@ -46,6 +48,7 @@ public class RunnableListApplets implements Runnable {
     public void run() {
         String localReader = m_reader;
         String localCmd = m_cmd;
+        String localIP = m_simonaIP;
         String request = localCmd + "\"" + localReader + "\"";
         AppletStatus appletStatus = new AppletStatus();
         appletStatus.setCommand(request);
@@ -61,8 +64,15 @@ public class RunnableListApplets implements Runnable {
         GPTool tool = new GPTool(psout, pserr);
         List<String> inputArgs = GPArgumentTokenizer.tokenize(request);
         try {
+            boolean allGood = false;
+            try {
             final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+                allGood = true;
+            } catch (IllegalStateException ignored) {
+                allGood = true;
+            }
 
+            if (allGood) {
             // lets' now parse the output
             String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
             for (String line : outputLines) {
@@ -73,8 +83,16 @@ public class RunnableListApplets implements Runnable {
                         GlobalConfiguration.addApplet(localReader, lineParts[1].trim(), appletStatus);
                     }
                 }
+                    if (lineParts[0].equalsIgnoreCase("# ATR")) {
+                        //first get the IP address
+
+                        // we add the card into the list of active cards - even if there's not applet present
+                        GlobalConfiguration.addSmartcard(localReader, localIP, lineParts[1]);
+                    }
+                }
             }
-        } catch (Exception e) {
+        } catch (Exception ignore) {
+            System.out.print("ERROR"+localReader);
         }
     }
 }

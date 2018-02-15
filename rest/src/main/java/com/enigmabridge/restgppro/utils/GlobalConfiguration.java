@@ -53,6 +53,7 @@ public class GlobalConfiguration {
     private static LinkedList<String> simonaSet;
     private static LinkedList<String> emptyReaders = new LinkedList<>();
     private static LinkedList<String> readers = new LinkedList<>();
+    private static HashMap<String, Pair<String, String>> smartcards = new HashMap<>();
     private static HashMap<String, LinkedList<String>> simonaReaders = new HashMap<>();
     private static ConcurrentHashMap<String, HashMap<String, AppletStatus>> cards = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<String, LinkedList<AppletStatus>> applets = new ConcurrentHashMap<>();
@@ -116,9 +117,18 @@ public class GlobalConfiguration {
         simonaReaders.get(ip).add(reader);
     }
 
+    public static void addSmartcard(String name, String ip, String atr) {
+        smartcards.putIfAbsent(name, new Pair<String, String>(ip, atr));
+    }
+
     public static LinkedList<String> getReaders() {
 
         return readers;
+    }
+
+    public static HashMap<String, Pair<String, String>> getSmartcards() {
+
+        return smartcards;
     }
 
     public static synchronized void addApplet(String reader, String aid, AppletStatus status) {
