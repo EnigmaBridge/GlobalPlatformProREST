@@ -52,7 +52,7 @@ public class RunnableListApplets implements Runnable {
         String request = localCmd + "\"" + localReader + "\"";
         AppletStatus appletStatus = new AppletStatus();
         appletStatus.setCommand(request);
-        appletStatus.setStatus(-1);
+        appletStatus.setStatus(0);
         appletStatus.setReader(localReader);
         request += " -l";
 
@@ -66,23 +66,23 @@ public class RunnableListApplets implements Runnable {
         try {
             boolean allGood = false;
             try {
-            final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
+                final int code = tool.work(inputArgs.toArray(new String[inputArgs.size()]));
                 allGood = true;
             } catch (IllegalStateException ignored) {
                 allGood = true;
             }
 
             if (allGood) {
-            // lets' now parse the output
-            String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
-            for (String line : outputLines) {
-                line = line.trim();
-                String[] lineParts = line.split(":");
-                if (lineParts[0].equalsIgnoreCase("Applet")) {
-                    if (!lineParts[1].trim().startsWith("A000")) {
-                        GlobalConfiguration.addApplet(localReader, lineParts[1].trim(), appletStatus);
+                // lets' now parse the output
+                String[] outputLines = stdout.toString("UTF-8").split("\\r?\\n");
+                for (String line : outputLines) {
+                    line = line.trim();
+                    String[] lineParts = line.split(":");
+                    if (lineParts[0].equalsIgnoreCase("Applet")) {
+                        if (!lineParts[1].trim().startsWith("A000")) {
+                            GlobalConfiguration.addApplet(localReader, lineParts[1].trim(), appletStatus);
+                        }
                     }
-                }
                     if (lineParts[0].equalsIgnoreCase("# ATR")) {
                         //first get the IP address
 
