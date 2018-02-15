@@ -78,6 +78,9 @@ public class MPCController {
         LinkedList<String> readers = GlobalConfiguration.getReaders();
         data.addReaders(readers);
 
+        HashMap<String, Pair<String, String>> smartcards = GlobalConfiguration.getSmartcards();
+        data.addSmartcards(smartcards);
+
         LinkedList<String> addresses = GlobalConfiguration.getSimonaIPs();
         for (String ip : addresses) {
             LinkedList<String> readers2 = GlobalConfiguration.getSimonaReaders(ip);

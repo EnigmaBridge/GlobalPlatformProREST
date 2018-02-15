@@ -23,6 +23,7 @@
 package com.enigmabridge.restgppro.response.data;
 
 import com.enigmabridge.restgppro.utils.AppletStatus;
+import com.enigmabridge.restgppro.utils.Pair;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,6 +36,7 @@ public class InventoryResponseData implements GeneralResponseData {
     private HashMap<String, HashMap<String, String>> applets = new HashMap<>();
     private LinkedList<String> readers = new LinkedList<>();
     private LinkedList<String> simonas = new LinkedList<>();
+    private HashMap<String, String> smartcards = new HashMap<>();
 
     @Override
     public void setValue(Object value) {
@@ -53,9 +55,19 @@ public class InventoryResponseData implements GeneralResponseData {
         return applets;
     }
 
+    public HashMap<String, String> getCards() { return smartcards; }
+
     public void addReaders(LinkedList<String> readers) {
         if (readers!=null) {
             this.readers = readers;
+        }
+    }
+
+    public void addSmartcards(HashMap<String, Pair<String, String>> l_cards) {
+        if (l_cards != null){
+            for (String one_key: l_cards.keySet()){
+                this.smartcards.putIfAbsent(one_key, l_cards.get(one_key).getR());
+            }
         }
     }
 
