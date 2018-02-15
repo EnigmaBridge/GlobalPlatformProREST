@@ -122,7 +122,7 @@ public class ProtocolDefinition {
         } else if (datain.startsWith("@")) {
             addData(datain);
             instruction.data = datain;
-        } else if ((datain.length() == 2) && (datain.matches("\\p{XDigit}+"))) {
+        } else if ((datain.length() % 2 == 0) && (datain.matches("\\p{XDigit}+"))) {
             instruction.data = datain;
         } else {
             return false;
