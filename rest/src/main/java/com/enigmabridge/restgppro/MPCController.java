@@ -135,11 +135,12 @@ public class MPCController {
                     for (AppletStatus onecard : instanceProcessors) {
                         prot.addProcessor(onecard.getAppletID(), onecard.getReader(), -1);
                     }
-                    // let's store it in a file
+                    // add the instance to a volatile list
                     GlobalConfiguration.addInstance(protocolInstanceUID, prot);
                     // now we will initialize the protocol instance
                     boolean result = GlobalConfiguration.InitializeInstance(prot);
                     if (result) {
+                        // let's store it in a file
                         prot.persist();
                         msgData.setInstance(protocolInstanceUID);
                         msgData.setPassword(password);

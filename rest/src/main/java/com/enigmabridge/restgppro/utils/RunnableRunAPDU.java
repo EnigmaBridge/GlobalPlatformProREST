@@ -39,6 +39,7 @@ public class RunnableRunAPDU implements Runnable {
     private final Integer m_index;
     private final boolean m_doReset;
     private String m_aid;
+    private String m_error;
     private AppletStatus m_applet;
     private String[] m_result;
     private Long latency;
@@ -52,6 +53,7 @@ public class RunnableRunAPDU implements Runnable {
         m_apduCommands = apdu.length;
         m_result = new String[m_apduCommands];
         m_index = index;
+        m_error = null;
         m_doReset = doReset;
 
     }
@@ -108,7 +110,7 @@ public class RunnableRunAPDU implements Runnable {
         String request = m_applet.getCommand();
         GPTool tool = m_applet.getSession();
 
-        if ((tool == null) || (m_doReset)) {
+        if (((tool == null) || (m_doReset)) && (select != null)) {
             request += " -a " + select;
             m_applet.logAPDU(select);
         }
@@ -167,6 +169,7 @@ public class RunnableRunAPDU implements Runnable {
             }
 
         } catch (Exception e) {
+            m_error = e.getMessage();
             LOG.error("Exception in GPTool: {}", e.getMessage());
         }
     }

@@ -88,6 +88,15 @@ public class RunnableListApplets implements Runnable {
 
                         // we add the card into the list of active cards - even if there's not applet present
                         GlobalConfiguration.addSmartcard(localReader, localIP, lineParts[1]);
+
+                        // create a new copy of the applet status and add it under the "BASIC" applet,
+                        // which is a list of smartcards available for the "BASIC" API endpoint
+                        appletStatus = new AppletStatus();
+                        appletStatus.setCommand(localCmd + "\"" + localReader + "\"");
+                        appletStatus.setStatus(1);
+                        appletStatus.setReader(localReader);
+
+                        GlobalConfiguration.addApplet(localReader, "basic", appletStatus);
                     }
                 }
             }

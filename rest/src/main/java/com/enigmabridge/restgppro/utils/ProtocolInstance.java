@@ -451,7 +451,7 @@ public class ProtocolInstance {
                         }
                     }
                 }
-                if (apduThreads.size()==0){
+                if (apduThreads.size() == 0) {
                     LOG.error("Error executing phase {}", phase);
                 }
             } catch (InterruptedException e) {
@@ -536,6 +536,62 @@ public class ProtocolInstance {
         return processors;
     }
 
+    public Pair<HashMap<String, String>, HashMap<String, Long>> runAPDU(
+            String apdu, String terminal, boolean doReset) {
+
+        HashMap<String, Long> timings = new HashMap<>();
+        LinkedList<RunnableRunAPDU> apduThreads = new LinkedList<>();
+
+        String[] apduArray = new String[1];
+        apduArray[0] = apdu;
+        AppletStatus as = this.cards.get("6261736963").getL(); //hex string of "basic"
+
+        this.executor = new ThreadPoolExecutor(2, 10, 10, TimeUnit.SECONDS, this.queue);
+
+        // and now we should call the smartcard
+        RunnableRunAPDU oneSC = new RunnableRunAPDU("",
+                as, 0, apduArray, doReset);
+        executor.execute(oneSC);
+        apduThreads.add(oneSC);
+
+        executor.shutdown();
+        try {
+            executor.awaitTermination(20, TimeUnit.SECONDS);
+            timings.putIfAbsent(apdu, 0L);
+
+            if (apduThreads.size() == 0) {
+                LOG.error("Error executing APDU", apdu);
+            }
+        } catch (InterruptedException e) {
+            LOG.error("Processing timeout: {}", apdu);
+            return null;
+        }
+
+        HashMap<String, String> output = new HashMap<>();
+
+        int threadIndex = 0;
+        for (RunnableRunAPDU value : apduThreads) {
+            timings.put(apdu, value.GetLatency());
+            threadIndex += 1;
+            String result = null;
+            String[][] dataIn = null;
+
+            for (int index = 0; index < value.GetAPDUNumber(); index++) {
+                output.putIfAbsent(apdu, value.GetResponse(index));
+
+            }
+        }
+
+
+        return new Pair<>(output, timings);
+    }
+
+    public void setAID(String AID) {
+        this.AID = AID;
+    }
+
+
     public enum InstanceStatus {CREATED, ALLOCATED, INITIALIZED, ERROR, DESTROYED}
+
 
 }

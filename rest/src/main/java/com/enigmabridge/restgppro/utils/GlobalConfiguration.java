@@ -140,6 +140,11 @@ public class GlobalConfiguration {
 
         applets.putIfAbsent(aid, new LinkedList<>());
         appletsReady.putIfAbsent(aid, new LinkedList<>());
+        if (aid.equalsIgnoreCase("basic")){
+            appletsReady.get(aid).addLast(status);
+            status.setAID("");
+            status.setAppletID("basic".getBytes(), 0, 5);
+        }
         applets.get(aid).add(status);
         // keep a separate list of applets ready for allocation -- this will be always false
         // we first need to check the applet status
@@ -265,12 +270,16 @@ public class GlobalConfiguration {
     }
 
     public static String getSelectCommand(String keys) {
-        String result = "00A40400";
-        if (keys.length() < 32) {
-            result += "0";
+        if (keys != null) {
+            String result = "00A40400";
+            if (keys.length() < 32) {
+                result += "0";
+            }
+            result += Integer.toHexString(keys.length() / 2) + keys;
+            return result;
+        } else {
+            return null;
         }
-        result += Integer.toHexString(keys.length() / 2) + keys;
-        return result;
     }
 
     public static String getInstanceFolder() {
@@ -316,9 +325,45 @@ public class GlobalConfiguration {
         return cards;
     }
 
+    /***
+     * Returns a card for the "basic" endpoint, if free
+     * @param reader - reader, as provided by the user
+     * @return a card allocated to the basic endpoint, null if not found or already allocated
+     */
+    public static synchronized LinkedList<AppletStatus> getFreeBasicCard(String reader) {
+        LinkedList<AppletStatus> cards = new LinkedList<>();
+        String basicName = "basic";
+
+        if (appletsReady.containsKey(basicName)) {
+            int index = 0;
+            boolean found = false;
+            LinkedList<AppletStatus> cardList = appletsReady.get(basicName);
+            for (AppletStatus as : cardList) {
+                if (as.getReader().equalsIgnoreCase(reader)) {
+                    found = true;
+                    break;
+                } else {
+                    index += 1;
+                }
+            }
+            if (found) {
+                AppletStatus one = appletsReady.get(basicName).remove(index);
+                cards.add(one);
+                one.setBusy(basicName);
+            }
+        } else {
+            cards = null;
+        }
+
+        return cards;
+    }
+
+
     static String getProtocolAID(String protocol) {
         if (isProtocol(protocol)) {
             return protocols.get(protocol.toLowerCase()).getAID();
+        } else if (protocol.equalsIgnoreCase("basic")) {
+            return "basic";
         } else {
             return null;
         }
@@ -347,7 +392,10 @@ public class GlobalConfiguration {
 
     public static boolean InitializeInstance(ProtocolInstance prot) {
 
-        if (isProtocol(prot.getProtocolName())) {
+        if (prot.getProtocolName().equalsIgnoreCase("basic")){
+            prot.queue = new LinkedBlockingDeque<>();
+            return true;
+        } else if (isProtocol(prot.getProtocolName())) {
             // lets first find the instruction
             ProtocolDefinition.Instruction ins = GlobalConfiguration.getProtocolInitCommand(prot.getProtocolName());
 
@@ -542,7 +590,7 @@ public class GlobalConfiguration {
         return runs;
     }
 
-    public static HashMap<String,ProtocolInstance> GetStats(AtomicInteger noOfInstances) {
+    public static HashMap<String, ProtocolInstance> GetStats(AtomicInteger noOfInstances) {
 
         return null;
     }
